@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --glass-bg: rgba(255, 255, 255, 0.065);
+  --glass-bg-strong: rgba(255, 255, 255, 0.11);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.28);
+  --glass-shadow: 0 20px 50px rgba(2, 8, 23, 0.45);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Inter", system-ui, sans-serif;
+  background-color: #060b16;
+  color: #eef5ff;
+  overflow: hidden;
+}
+
+.cage-ambient {
+  position: relative;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(56, 189, 248, 0.22), transparent 36%),
+    radial-gradient(circle at 86% 18%, rgba(99, 102, 241, 0.22), transparent 40%),
+    radial-gradient(circle at 52% 92%, rgba(16, 185, 129, 0.14), transparent 42%),
+    linear-gradient(155deg, #050a14 0%, #0b1326 48%, #070d1b 100%);
+  transition: background 0.6s ease;
+}
+
+.cage-ambient.mode-vm {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(139, 92, 246, 0.28), transparent 38%),
+    radial-gradient(circle at 85% 22%, rgba(56, 189, 248, 0.25), transparent 40%),
+    radial-gradient(circle at 48% 88%, rgba(168, 85, 247, 0.16), transparent 44%),
+    linear-gradient(155deg, #09071a 0%, #11112e 48%, #070b1a 100%);
+}
+
+.glass-panel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
+  backdrop-filter: blur(26px) saturate(165%);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    var(--glass-shadow);
+}
+
+.glass-card {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 10px 28px rgba(2, 6, 23, 0.32);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.075);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.glass-input {
+  background: rgba(6, 12, 26, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(103, 232, 249, 0.65);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.glass-alert {
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.16), rgba(244, 63, 94, 0.08));
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 16px 40px rgba(245, 158, 11, 0.16);
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Custom translucent scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}

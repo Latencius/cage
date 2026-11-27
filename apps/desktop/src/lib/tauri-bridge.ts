@@ -1,0 +1,188 @@
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
+import type {
+  ApprovalChallenge,
+  ApprovalGrant,
+  AuditEntry,
+  HostBridge,
+  LocalLlmEndpoint,
+  SecurityPolicy,
+  ToolCategory,
+  ToolExecResult,
+} from '@cage/agent-core';
+
+export function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+const DEFAULT_POLICY: SecurityPolicy = {
+  allowedDirs: [],
+  executionMode: 'local',
+  permissions: {
+    fs_read: 'auto_allow',
+    fs_write: 'require_approval',
+    fs_delete: 'require_approval',
+    shell_exec: 'require_approval',
+    web_fetch: 'auto_allow',
+    vm_control: 'require_approval',
+  },
+};
+
+// In-memory browser fallback so UI can also be previewed via `vite` outside Tauri
+let browserPolicy: SecurityPolicy = {
+  ...DEFAULT_POLICY,
+  allowedDirs: ['/Users/demo/CageWorkspace'],
+};
+let browserAudit: AuditEntry[] = [];
+
+export async function getSecurityPolicy(): Promise<SecurityPolicy> {
+  if (isTauriRuntime()) {
+    return invoke<SecurityPolicy>('get_security_policy');
+  }
+  return structuredClone(browserPolicy);
+}
+
+export async function updateSecurityPolicy(policy: SecurityPolicy): Promise<SecurityPolicy> {
+  if (isTauriRuntime()) {
+    return invoke<SecurityPolicy>('update_security_policy', { policy });
+  }
+  browserPolicy = structuredClone(policy);
+  return structuredClone(browserPolicy);
+}
+
+export async function getAuditLog(): Promise<AuditEntry[]> {
+  if (isTauriRuntime()) {
+    return invoke<AuditEntry[]>('get_audit_log');
+  }
+  return [...browserAudit];
+}
+
+export async function clearAuditLog(): Promise<void> {
+  if (isTauriRuntime()) {
+    await invoke('clear_audit_log');
+    return;
+  }
+  browserAudit = [];
+}
+
+export async function scanLocalLlms(): Promise<LocalLlmEndpoint[]> {
+  if (isTauriRuntime()) {
+    return invoke<LocalLlmEndpoint[]>('scan_local_llms');
+  }
+  return [
+    {
+      id: 'ollama',
+      name: 'Ollama',
+      baseUrl: 'http://127.0.0.1:11434/v1',
+      online: false,
+      models: [],
+      latencyMs: null,
+    },
+    {
+      id: 'lmstudio',
+      name: 'LM Studio',
+      baseUrl: 'http://127.0.0.1:1234/v1',
+      online: false,
+      models: [],
+      latencyMs: null,
+    },
+  ];
+}
+
+export async function pickAllowedFolder(): Promise<string | null> {
+  if (isTauriRuntime()) {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Cage にアクセスを許可するフォルダを選択',
+    });
+    return typeof selected === 'string' ? selected : null;
+  }
+  const entered = window.prompt('許可するフォルダパスを入力 (ブラウザプレビューモード):', '/Users/demo/Workspace');
+  return entered?.trim() || null;
+}
+
+export const tauriHostBridge: HostBridge = {
+  getPolicy: getSecurityPolicy,
+
+  async requestApproval(
+    toolName: string,
+    category: ToolCategory,
+    summary: string,
+    args: Record<string, unknown>,
+  ): Promise<ApprovalChallenge> {
+    if (isTauriRuntime()) {
+      return invoke<ApprovalChallenge>('request_tool_approval', {
+        toolName,
+        category,
+        summary,
+        args,
+      });
+    }
+    return {
+      approvalId: `web_apr_${Date.now()}`,
+      toolName,
+      category,
+      summary,
+      argsHash: 'browser-preview-hash',
+      expiresAt: new Date(Date.now() + 300_000).toISOString(),
+    };
+  },
+
+  async approveRequest(approvalId: string): Promise<ApprovalGrant> {
+    if (isTauriRuntime()) {
+      return invoke<ApprovalGrant>('approve_tool_request', { approvalId });
+    }
+    return {
+      approvalId,
+      approvalToken: `web_grant_${Date.now()}`,
+      expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    };
+  },
+
+  async denyRequest(approvalId: string): Promise<void> {
+    if (isTauriRuntime()) {
+      await invoke('deny_tool_request', { approvalId });
+    }
+  },
+
+  async executeLocalTool(
+    toolName: string,
+    args: Record<string, unknown>,
+    approvalToken?: string,
+  ): Promise<ToolExecResult> {
+    if (isTauriRuntime()) {
+      return invoke<ToolExecResult>('execute_local_tool', {
+        toolName,
+        args,
+        approvalToken: approvalToken ?? null,
+      });
+    }
+    browserAudit.push({
+      id: `aud_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      toolName,
+      category: toolName === 'run_shell' ? 'shell_exec' : 'fs_write',
+      decision: approvalToken ? 'approved_and_executed' : 'auto_allowed',
+      summary: `[Preview] Executed ${toolName} with ${JSON.stringify(args)}`,
+      ok: true,
+    });
+    return {
+      ok: true,
+      output: `[Browser Preview] Simulated ${toolName}(${JSON.stringify(args)}) inside ${browserPolicy.allowedDirs[0] ?? '.'}`,
+      truncated: false,
+    };
+  },
+
+  async proxyHttp(req) {
+    if (isTauriRuntime()) {
+      return invoke<{ status: number; ok: boolean; body: string }>('proxy_http', { req });
+    }
+    const res = await fetch(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    });
+    return { status: res.status, ok: res.ok, body: await res.text() };
+  },
+};

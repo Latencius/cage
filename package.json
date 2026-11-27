@@ -1,0 +1,20 @@
+{
+  "name": "cage-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run tauri:dev --workspace=@cage/desktop",
+    "dev:desktop:ui": "npm run dev --workspace=@cage/desktop",
+    "dev:web": "npm run dev --workspace=@cage/web",
+    "build:core": "npm run build --workspace=@cage/agent-core",
+    "build:desktop:ui": "npm run build --workspace=@cage/desktop",
+    "build:desktop": "npm run tauri:build --workspace=@cage/desktop",
+    "build:web": "npm run build --workspace=@cage/web",
+    "test:core": "npm run test --workspace=@cage/agent-core",
+    "typecheck": "npm run typecheck --workspace=@cage/agent-core && npm run typecheck --workspace=@cage/desktop && npm run typecheck --workspace=@cage/web"
+  }
+}
