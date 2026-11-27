@@ -35,7 +35,7 @@ export function StarPopupCard({ open, onStarred, onLater, onNever, t }: StarPopu
       aria-label={t.title}
       className="fixed right-4 bottom-4 z-50 w-[calc(100vw-2rem)] max-w-sm animate-[fadeInUp_0.3s_ease-out]"
     >
-      <div className="glass-panel relative overflow-hidden rounded-2xl p-4 ring-1 ring-amber-300/35">
+      <div className="relative overflow-hidden rounded-2xl border border-amber-200/35 bg-slate-950/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_24px_60px_rgba(2,6,23,0.75)] backdrop-blur-2xl">
         <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-amber-300/20 blur-2xl" />
 
         <div className="relative flex items-start justify-between gap-3">
