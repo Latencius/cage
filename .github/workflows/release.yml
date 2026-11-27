@@ -53,7 +53,18 @@ jobs:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: "Cage v__VERSION__"
-          releaseBody: "Download the installer for macOS (Apple Silicon / Intel) or Windows below."
+          releaseBody: |
+            ### Cage v__VERSION__ — Transparent Glass Cage for Local AI Agents
+
+            - **Custom Liquid Glass Icon & UI**: Translucent macOS/Windows desktop client built with Tauri v2 (~5 MiB installer)
+            - **Zero-Config Local LLM Discovery**: Auto-detects Ollama, LM Studio, llama.cpp, and vLLM
+            - **Rust Physical Security Boundary**: Path traversal/symlink protection + single-use, argument-bound human approval tokens
+            - **MCP (stdio & Streamable HTTP) Integration**: Connect external MCP servers protected by Cage's Approval Gate
+            - **OpenClaw Gateway (WebSocket v4)**: Connect to `ws://127.0.0.1:18789` and intercept `exec.approval` requests
+            - **Isolated Cloud VM Mode**: One-toggle E2B Desktop noVNC sandbox with Human Takeover
+            - **Multilingual (EN default / 日本語 / 简体中文)** & GitHub Star popup card
+
+            Download the installer for macOS (Apple Silicon / Intel) or Windows below.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
