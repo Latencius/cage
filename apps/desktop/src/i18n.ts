@@ -97,6 +97,22 @@ export interface DesktopMessages {
     e2bDesc: string;
     e2bHowTitle: string;
     e2bBullets: string[];
+    openclawTitle: string;
+    openclawDesc: string;
+    openclawProbe: string;
+    openclawConnect: string;
+    openclawDisconnect: string;
+    openclawRequireApproval: string;
+    openclawUseRuntime: string;
+    openclawActiveRuntime: string;
+    mcpTitle: string;
+    mcpDesc: string;
+    mcpAddServer: string;
+    mcpPresetsLabel: string;
+    mcpNoServers: string;
+    mcpConnect: string;
+    mcpDisconnect: string;
+    mcpToolsCount: (n: number) => string;
   };
   safety: {
     foldersTitle: string;
@@ -200,6 +216,24 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         'Watch live noVNC desktop video embedded right inside Cage',
         'Click "Takeover" anytime to manually control the VM mouse & keyboard',
       ],
+      openclawTitle: 'OpenClaw Gateway (WebSocket v4)',
+      openclawDesc:
+        'Connect to a local or remote OpenClaw Gateway (default ws://127.0.0.1:18789) and control it through Cage’s approval UI.',
+      openclawProbe: 'Probe :18789',
+      openclawConnect: 'Connect Gateway',
+      openclawDisconnect: 'Disconnect',
+      openclawRequireApproval: 'Require Cage approval before dispatching prompts',
+      openclawUseRuntime: 'Switch Mission to OpenClaw',
+      openclawActiveRuntime: 'Active in Mission Control',
+      mcpTitle: 'MCP Servers (Model Context Protocol)',
+      mcpDesc:
+        'Attach stdio or Streamable HTTP MCP servers. Every external MCP tool call passes through Cage’s Rust Approval Gate.',
+      mcpAddServer: 'Add MCP Server',
+      mcpPresetsLabel: 'Quick Presets:',
+      mcpNoServers: 'No MCP servers configured yet. Add a preset or custom stdio/HTTP server.',
+      mcpConnect: 'Connect',
+      mcpDisconnect: 'Disconnect',
+      mcpToolsCount: (n) => `${n} tools`,
     },
     safety: {
       foldersTitle: 'Allowed Workspace Folders (Rust Physical Sandbox)',
@@ -241,6 +275,10 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         vm_control: {
           label: 'Isolated VM Control (Computer Use)',
           desc: 'Clicks, typing, app launches, and Bash inside the E2B cloud VM',
+        },
+        mcp_tool: {
+          label: 'External MCP Server Tools',
+          desc: 'Calls to connected stdio / HTTP Model Context Protocol servers (approval recommended)',
         },
       },
       auditTitle: (count) => `Rust Security Audit Log (${count} entries)`,
@@ -332,6 +370,24 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         'アプリ右ペインに仮想PCのライブ画面（noVNC）を埋め込み',
         '必要時は「手動操作（Takeover）」ボタンで人間が横取り操作可能',
       ],
+      openclawTitle: 'OpenClaw Gateway 接続（WebSocket v4）',
+      openclawDesc:
+        'ローカル/リモートの OpenClaw Gateway（既定 ws://127.0.0.1:18789）へ接続し、Cage のガラスUI＆承認ゲート経由で安全に制御します。',
+      openclawProbe: ':18789 を検知',
+      openclawConnect: 'Gateway に接続',
+      openclawDisconnect: '切断',
+      openclawRequireApproval: 'OpenClaw へタスク送信する前に Cage 承認ゲートを挟む',
+      openclawUseRuntime: 'ミッションを OpenClaw に切替',
+      openclawActiveRuntime: 'ミッション画面で使用中',
+      mcpTitle: 'MCP サーバー連携（Model Context Protocol）',
+      mcpDesc:
+        'stdio / Streamable HTTP の MCP サーバーを接続できます。すべての外部 MCP ツール呼び出しも Rust の承認ゲートで保護されます。',
+      mcpAddServer: 'MCPサーバーを追加',
+      mcpPresetsLabel: 'プリセット追加:',
+      mcpNoServers: 'MCPサーバーが未登録です。プリセットまたはカスタム stdio / HTTP を追加してください。',
+      mcpConnect: '接続',
+      mcpDisconnect: '切断',
+      mcpToolsCount: (n) => `${n} ツール`,
     },
     safety: {
       foldersTitle: 'アクセス許可フォルダ（Rust物理サンドボックス）',
@@ -373,6 +429,10 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         vm_control: {
           label: '隔離VM操作 (Computer Use)',
           desc: 'E2BクラウドVM上での画面クリック・文字入力・アプリ起動・Bash実行',
+        },
+        mcp_tool: {
+          label: '外部 MCP サーバーツール',
+          desc: '接続中の stdio / HTTP MCP サーバーへの tools/call 実行（毎回承認を推奨）',
         },
       },
       auditTitle: (count) => `Rust セキュリティ監査ログ（最新 ${count} 件）`,
@@ -458,6 +518,24 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         '右侧窗口直接嵌入虚拟桌面 noVNC 实时画面',
         '随时点击「人工接管」即可直接接管虚拟机鼠标与键盘',
       ],
+      openclawTitle: 'OpenClaw Gateway 连接 (WebSocket v4)',
+      openclawDesc:
+        '连接本地或远程 OpenClaw Gateway（默认 ws://127.0.0.1:18789），通过 Cage 玻璃审批界面安全管控执行。',
+      openclawProbe: '探测 :18789',
+      openclawConnect: '连接 Gateway',
+      openclawDisconnect: '断开',
+      openclawRequireApproval: '发送任务给 OpenClaw 前经过 Cage 审批网关',
+      openclawUseRuntime: '切换控制台至 OpenClaw',
+      openclawActiveRuntime: '当前任务控制台已启用',
+      mcpTitle: 'MCP 服务器集成 (Model Context Protocol)',
+      mcpDesc:
+        '支持 stdio 与 Streamable HTTP MCP 服务器。所有外部 MCP 工具调用均受 Rust 审批网关保护。',
+      mcpAddServer: '添加 MCP 服务器',
+      mcpPresetsLabel: '快速预设：',
+      mcpNoServers: '尚未配置 MCP 服务器。请点击预设或添加自定义 stdio / HTTP 服务器。',
+      mcpConnect: '连接',
+      mcpDisconnect: '断开',
+      mcpToolsCount: (n) => `${n} 个工具`,
     },
     safety: {
       foldersTitle: '授权工作目录（Rust 物理沙盒）',
@@ -498,6 +576,10 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
         vm_control: {
           label: '隔离 VM 控制 (Computer Use)',
           desc: '在 E2B 云端虚拟桌面中点击、输入、启动应用或运行 Bash',
+        },
+        mcp_tool: {
+          label: '外部 MCP 服务器工具',
+          desc: '调用已连接的 stdio / HTTP MCP 服务器工具（建议开启审批）',
         },
       },
       auditTitle: (count) => `Rust 安全审计日志（共 ${count} 条）`,

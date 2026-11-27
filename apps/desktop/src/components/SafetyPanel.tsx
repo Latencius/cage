@@ -27,6 +27,7 @@ const CATEGORIES: ToolCategory[] = [
   'shell_exec',
   'web_fetch',
   'vm_control',
+  'mcp_tool',
 ];
 
 const LEVEL_STYLES: Array<{ value: PermissionLevel; activeClass: string }> = [

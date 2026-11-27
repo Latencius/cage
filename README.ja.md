@@ -26,6 +26,8 @@
 - **Local 🟢 / Isolated VM 🛡️ ハイブリッド切替**:
   - 日常作業はローカル許可フォルダ内で無料＆高速に実行
   - ブラウザ自律巡回や危険な検証はトグル1つで **E2B Desktop** の使い捨てUbuntu VMに逃がし、アプリ内ライブ映像（noVNC）を見守りつつ必要時に「手動操作（Takeover）」で介入可能
+- **MCP (Model Context Protocol) 連携**: `stdio` / `Streamable HTTP` の両方式に対応。外部 MCP サーバーのツールも Rust のワンタイム承認トークンで安全に保護します。
+- **OpenClaw Gateway 接続 (WebSocket v4)**: `ws://127.0.0.1:18789` を自動検知し、`connect.challenge` → `hello-ok` ハンドシェイク、リアルタイム `agent` ストリーミング、承認要求（`exec.approval`）の横取り承認に対応します。
 - **超軽量 Tauri v2 & Liquid Glass UI**:
   - macOS `.dmg` 約 4.8 MiB。Electron のようにメモリを消費せず、ローカルLLMのためにユニファイドメモリ / VRAM を温存できます。
 

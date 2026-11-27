@@ -1,4 +1,4 @@
-import type { ExecutionMode, LlmConfig } from '@cage/agent-core';
+import type { AgentRuntime, ExecutionMode, LlmConfig } from '@cage/agent-core';
 import {
   Cpu,
   Globe,
@@ -18,6 +18,8 @@ interface GlassHeaderProps {
   onSelectTab: (tab: ActiveTab) => void;
   mode: ExecutionMode;
   onChangeMode: (mode: ExecutionMode) => void;
+  runtime: AgentRuntime;
+  mcpToolCount: number;
   llm: LlmConfig;
   allowedFolderCount: number;
   vmRunning: boolean;
@@ -31,6 +33,8 @@ export function GlassHeader({
   onSelectTab,
   mode,
   onChangeMode,
+  runtime,
+  mcpToolCount,
   llm,
   allowedFolderCount,
   vmRunning,
@@ -50,13 +54,16 @@ export function GlassHeader({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold tracking-wide text-white">Cage</span>
             <span className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 text-[10px] font-medium text-cyan-200/90">
-              v0.1
+              v0.2
             </span>
           </div>
           <p className="text-[11px] text-slate-300/80">
-            {llm.demoMode
-              ? t.demoActive
-              : `${llm.providerName} · ${llm.model || t.unselected}`}
+            {runtime === 'openclaw'
+              ? 'OpenClaw Gateway'
+              : llm.demoMode
+                ? t.demoActive
+                : `${llm.providerName} · ${llm.model || t.unselected}`}
+            {mcpToolCount > 0 ? ` · ${mcpToolCount} MCP` : ''}
           </p>
         </div>
       </div>

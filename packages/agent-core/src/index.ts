@@ -3,3 +3,4 @@ export * from './tools.ts';
 export * from './llm.ts';
 export * from './e2b.ts';
 export * from './engine.ts';
+export * from './openclaw.ts';

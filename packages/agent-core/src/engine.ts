@@ -62,7 +62,8 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
   } = opts;
 
   const policy = await bridge.getPolicy();
-  const tools = getToolsForMode(mode);
+  const mcpTools = (await bridge.listMcpTools?.()) ?? [];
+  const tools = getToolsForMode(mode, mcpTools);
 
   const messages: ChatMessage[] = [
     { role: 'system', content: buildSystemPrompt(mode, policy.allowedDirs) },
@@ -121,7 +122,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
 
     for (const tc of response.toolCalls) {
       const toolName = tc.function.name;
-      const spec = findToolSpec(toolName);
+      const spec = findToolSpec(toolName, tools);
       let args: Record<string, unknown> = {};
       try {
         args = tc.function.arguments ? (JSON.parse(tc.function.arguments) as Record<string, unknown>) : {};
@@ -228,7 +229,18 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
 
       let execResult: ToolExecResult;
       try {
-        if (spec.mode === 'isolated_vm') {
+        if (spec.mcpServerId && spec.mcpToolName) {
+          if (!bridge.callMcpTool) {
+            execResult = { ok: false, output: 'MCP bridge is not available.', truncated: false };
+          } else {
+            execResult = await bridge.callMcpTool(
+              spec.mcpServerId,
+              spec.mcpToolName,
+              args,
+              approvalToken,
+            );
+          }
+        } else if (spec.mode === 'isolated_vm') {
           if (!vm) {
             execResult = { ok: false, output: 'VM controller not attached.', truncated: false };
           } else {

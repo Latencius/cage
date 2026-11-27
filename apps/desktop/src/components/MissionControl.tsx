@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type {
+  AgentRuntime,
   ExecutionMode,
   PendingApprovalView,
   TimelineEvent,
@@ -10,6 +11,7 @@ import {
   CheckCircle2,
   FolderLock,
   Loader2,
+  Radio,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -18,6 +20,7 @@ import {
   Terminal,
   Trash2,
   User,
+  Wrench,
   XCircle,
 } from 'lucide-react';
 import type { DesktopMessages } from '../i18n';
@@ -26,6 +29,10 @@ import { VmViewport } from './VmViewport';
 
 interface MissionControlProps {
   mode: ExecutionMode;
+  runtime: AgentRuntime;
+  onChangeRuntime: (rt: AgentRuntime) => void;
+  mcpToolCount: number;
+  openClawConnected: boolean;
   events: TimelineEvent[];
   running: boolean;
   pendingApproval: PendingApprovalView | null;
@@ -47,6 +54,10 @@ interface MissionControlProps {
 
 export function MissionControl({
   mode,
+  runtime,
+  onChangeRuntime,
+  mcpToolCount,
+  openClawConnected,
   events,
   running,
   pendingApproval,
@@ -121,15 +132,53 @@ export function MissionControl({
             )}
           </div>
 
-          {events.length > 0 && (
+          <div className="flex items-center gap-2">
+            {/* Runtime Switcher */}
+            <div className="flex items-center gap-0.5 rounded-lg border border-white/12 bg-white/5 p-0.5 text-[11px]">
+              <button
+                onClick={() => onChangeRuntime('builtin')}
+                className={`rounded-md px-2 py-0.5 font-medium transition ${
+                  runtime === 'builtin'
+                    ? 'bg-cyan-400/25 text-cyan-100'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Cage
+              </button>
+              <button
+                onClick={() => onChangeRuntime('openclaw')}
+                className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition ${
+                  runtime === 'openclaw'
+                    ? 'bg-amber-400/25 text-amber-100'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Radio className="h-3 w-3" />
+                OpenClaw
+                {openClawConnected && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                )}
+              </button>
+            </div>
+
             <button
-              onClick={onClearTimeline}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-400 transition hover:bg-white/10 hover:text-white"
+              onClick={onOpenSetup}
+              className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-300 transition hover:bg-white/12 hover:text-white"
             >
-              <Trash2 className="h-3 w-3" />
-              {t.mission.clear}
+              <Wrench className="h-3 w-3 text-emerald-300" />
+              MCP: {mcpToolCount}
             </button>
-          )}
+
+            {events.length > 0 && (
+              <button
+                onClick={onClearTimeline}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-400 transition hover:bg-white/10 hover:text-white"
+              >
+                <Trash2 className="h-3 w-3" />
+                {t.mission.clear}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Timeline Stream */}

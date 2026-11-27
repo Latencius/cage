@@ -1,4 +1,4 @@
-import type { ExecutionMode, RiskLevel, ToolCategory } from './types.ts';
+import type { ExecutionMode, McpToolInfo, RiskLevel, ToolCategory } from './types.ts';
 
 export interface ToolSpec {
   name: string;
@@ -6,11 +6,9 @@ export interface ToolSpec {
   risk: RiskLevel;
   mode: ExecutionMode;
   description: string;
-  parameters: {
-    type: 'object';
-    properties: Record<string, { type: string; description: string }>;
-    required: string[];
-  };
+  parameters: Record<string, unknown>;
+  mcpServerId?: string;
+  mcpToolName?: string;
 }
 
 export const LOCAL_TOOLS: ToolSpec[] = [
@@ -205,12 +203,33 @@ export const VM_TOOLS: ToolSpec[] = [
 
 export const ALL_TOOLS: ToolSpec[] = [...LOCAL_TOOLS, ...VM_TOOLS];
 
-export function getToolsForMode(mode: ExecutionMode): ToolSpec[] {
-  return mode === 'isolated_vm' ? VM_TOOLS : LOCAL_TOOLS;
+export function mcpToolQualifiedName(serverId: string, toolName: string): string {
+  return `mcp__${serverId}__${toolName}`;
 }
 
-export function findToolSpec(name: string): ToolSpec | undefined {
-  return ALL_TOOLS.find((t) => t.name === name);
+export function mcpToolsToSpecs(mcpTools: McpToolInfo[], mode: ExecutionMode): ToolSpec[] {
+  return mcpTools.map((mt) => ({
+    name: mcpToolQualifiedName(mt.serverId, mt.name),
+    category: 'mcp_tool',
+    risk: 'high',
+    mode,
+    description: `[MCP:${mt.serverName}] ${mt.description || mt.name}`,
+    parameters:
+      mt.inputSchema && typeof mt.inputSchema === 'object'
+        ? mt.inputSchema
+        : { type: 'object', properties: {} },
+    mcpServerId: mt.serverId,
+    mcpToolName: mt.name,
+  }));
+}
+
+export function getToolsForMode(mode: ExecutionMode, mcpTools: McpToolInfo[] = []): ToolSpec[] {
+  const base = mode === 'isolated_vm' ? VM_TOOLS : LOCAL_TOOLS;
+  return [...base, ...mcpToolsToSpecs(mcpTools, mode)];
+}
+
+export function findToolSpec(name: string, dynamicTools: ToolSpec[] = []): ToolSpec | undefined {
+  return dynamicTools.find((t) => t.name === name) ?? ALL_TOOLS.find((t) => t.name === name);
 }
 
 export function toOpenAiTools(tools: ToolSpec[]) {
@@ -253,6 +272,12 @@ export function describeToolCall(name: string, args: Record<string, unknown>): s
     case 'vm_bash':
       return `Run Bash in isolated VM: ${String(args.command ?? '')}`;
     default:
+      if (name.startsWith('mcp__')) {
+        const parts = name.split('__');
+        const server = parts[1] ?? 'mcp';
+        const tool = parts.slice(2).join('__') || name;
+        return `MCP [${server}] → ${tool}(${JSON.stringify(args).slice(0, 120)})`;
+      }
       return `${name}(${JSON.stringify(args)})`;
   }
 }

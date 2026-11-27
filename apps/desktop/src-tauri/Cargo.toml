@@ -1,6 +1,6 @@
 [package]
 name = "cage"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cage - Local-first AI Agent GUI with glassmorphic safety boundaries and isolated VM mode"
 authors = ["Cage Contributors"]
 license = "MIT"

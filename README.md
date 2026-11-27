@@ -25,7 +25,9 @@
 ## Key Features
 
 - **Glassmorphic Mission Control**: Real-time transparent timeline showing thoughts, tool invocations, approval gates, and outputs.
-- **Human-in-the-Loop Approval Firewall**: Per-category permission matrix (`Auto Allow` / `Require Approval` / `Deny`) for file reads, writes, deletes, shell commands, web fetches, and VM control.
+- **MCP (Model Context Protocol) Support**: Connect `stdio` or `Streamable HTTP` MCP servers; dynamically injected tools still pass through Rust's one-time human approval gate.
+- **OpenClaw Gateway (WebSocket v4) Support**: Probe `ws://127.0.0.1:18789`, authenticate via `connect.challenge` → `hello-ok`, stream `agent` events into Cage's glass timeline, and intercept `exec.approval` requests in Cage's Approval Gate.
+- **Human-in-the-Loop Approval Firewall**: Per-category permission matrix (`Auto Allow` / `Require Approval` / `Deny`) for file reads, writes, deletes, shell commands, web fetches, MCP tools, and VM control.
 - **Small Local LLM Friendly**: Hybrid tool-call parser supporting both native OpenAI `tool_calls` and fenced JSON fallback for 8B–32B local models.
 - **Offline Demo Sandbox Built-In**: Try the approval gate and timeline workflow right away even before installing Ollama or adding API keys.
 - **Tiny Footprint**: ~4.8 MiB macOS `.dmg` installer and minimal RAM overhead so your unified memory / VRAM stays free for local LLMs.

@@ -190,3 +190,52 @@ pub async fn execute_proxy_http(req: ProxyHttpRequest) -> Result<ProxyHttpRespon
 
     Ok(ProxyHttpResponse { status, ok, body })
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenClawProbeResult {
+    pub ws_url: String,
+    pub http_url: String,
+    pub reachable: bool,
+    pub latency_ms: Option<u64>,
+    pub detail: String,
+}
+
+pub async fn probe_openclaw(ws_url: &str) -> OpenClawProbeResult {
+    let trimmed = ws_url.trim();
+    let http_url = if let Some(rest) = trimmed.strip_prefix("wss://") {
+        format!("https://{}", rest)
+    } else if let Some(rest) = trimmed.strip_prefix("ws://") {
+        format!("http://{}", rest)
+    } else if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else {
+        format!("http://{}", trimmed)
+    };
+
+    let client = Client::builder()
+        .timeout(Duration::from_millis(1500))
+        .build()
+        .unwrap_or_else(|_| Client::new());
+
+    let start = std::time::Instant::now();
+    match client.get(&http_url).send().await {
+        Ok(resp) => {
+            let latency = start.elapsed().as_millis() as u64;
+            OpenClawProbeResult {
+                ws_url: trimmed.to_string(),
+                http_url,
+                reachable: true,
+                latency_ms: Some(latency),
+                detail: format!("Gateway HTTP responded ({})", resp.status()),
+            }
+        }
+        Err(e) => OpenClawProbeResult {
+            ws_url: trimmed.to_string(),
+            http_url,
+            reachable: false,
+            latency_ms: None,
+            detail: format!("Unreachable: {}", e),
+        },
+    }
+}

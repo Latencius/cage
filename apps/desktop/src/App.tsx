@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IsolatedVmController,
+  OpenClawClient,
   runAgentTurn,
+  type AgentRuntime,
   type AuditEntry,
   type ChatMessage,
   type ExecutionMode,
   type LlmConfig,
   type LocalLlmEndpoint,
+  type McpServerConfig,
+  type McpServerStatus,
+  type OpenClawConfig,
+  type OpenClawConnectionState,
+  type OpenClawProbeResult,
   type PendingApprovalView,
   type PermissionLevel,
   type SecurityPolicy,
@@ -27,8 +34,14 @@ import {
 import {
   clearAuditLog,
   getAuditLog,
+  getMcpServers,
   getSecurityPolicy,
+  mcpConnectServer,
+  mcpDisconnectServer,
+  mcpListStatuses,
   pickAllowedFolder,
+  probeOpenClawGateway,
+  saveMcpServers,
   scanLocalLlms,
   tauriHostBridge,
   updateSecurityPolicy,
@@ -36,6 +49,7 @@ import {
 
 const STORAGE_LLM_KEY = 'cage.llm.config.v1';
 const STORAGE_E2B_KEY = 'cage.e2b.apikey.v1';
+const STORAGE_OPENCLAW_KEY = 'cage.openclaw.config.v1';
 
 const DEFAULT_LLM: LlmConfig = {
   providerName: 'Offline Demo',
@@ -43,6 +57,13 @@ const DEFAULT_LLM: LlmConfig = {
   apiKey: '',
   model: 'cage-demo-simulator',
   demoMode: true,
+};
+
+const DEFAULT_OPENCLAW: OpenClawConfig = {
+  wsUrl: 'ws://127.0.0.1:18789',
+  token: '',
+  sessionKey: 'cage-main',
+  requireSendApproval: true,
 };
 
 const DEFAULT_POLICY: SecurityPolicy = {
@@ -55,12 +76,14 @@ const DEFAULT_POLICY: SecurityPolicy = {
     shell_exec: 'require_approval',
     web_fetch: 'auto_allow',
     vm_control: 'require_approval',
+    mcp_tool: 'require_approval',
   },
 };
 
 export default function App() {
   const [locale, setLocale] = useState<Locale>(getInitialLocale);
   const [activeTab, setActiveTab] = useState<ActiveTab>('mission');
+  const [runtime, setRuntime] = useState<AgentRuntime>('builtin');
   const [policy, setPolicy] = useState<SecurityPolicy>(DEFAULT_POLICY);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [endpoints, setEndpoints] = useState<LocalLlmEndpoint[]>([]);
@@ -89,6 +112,25 @@ export default function App() {
     }
   });
 
+  const [openClawConfig, setOpenClawConfig] = useState<OpenClawConfig>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_OPENCLAW_KEY);
+      return saved ? { ...DEFAULT_OPENCLAW, ...(JSON.parse(saved) as OpenClawConfig) } : DEFAULT_OPENCLAW;
+    } catch {
+      return DEFAULT_OPENCLAW;
+    }
+  });
+  const openClawClientRef = useRef(new OpenClawClient());
+  const [openClawState, setOpenClawState] = useState<OpenClawConnectionState>(() =>
+    openClawClientRef.current.getState(),
+  );
+  const [openClawProbe, setOpenClawProbe] = useState<OpenClawProbeResult | null>(null);
+
+  const [mcpServers, setMcpServers] = useState<McpServerConfig[]>([]);
+  const [mcpStatuses, setMcpStatuses] = useState<McpServerStatus[]>([]);
+  const [mcpBusyId, setMcpBusyId] = useState<string | null>(null);
+  const [mcpError, setMcpError] = useState<string | null>(null);
+
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [running, setRunning] = useState(false);
@@ -99,9 +141,20 @@ export default function App() {
   const vmControllerRef = useRef(new IsolatedVmController());
   const [vmState, setVmState] = useState<VmSessionState>(() => vmControllerRef.current.getState());
 
+  const mcpToolCount = mcpStatuses.reduce(
+    (sum, s) => sum + (s.connected ? s.tools.length : 0),
+    0,
+  );
+
   const refreshAudit = useCallback(async () => {
     const log = await getAuditLog();
     setAuditLog(log);
+  }, []);
+
+  const refreshMcp = useCallback(async () => {
+    const [cfgs, statuses] = await Promise.all([getMcpServers(), mcpListStatuses()]);
+    setMcpServers(cfgs);
+    setMcpStatuses(statuses);
   }, []);
 
   const rescanLocalLlms = useCallback(async () => {
@@ -128,8 +181,9 @@ export default function App() {
   useEffect(() => {
     getSecurityPolicy().then(setPolicy);
     refreshAudit();
+    refreshMcp();
     rescanLocalLlms();
-  }, [refreshAudit, rescanLocalLlms]);
+  }, [refreshAudit, refreshMcp, rescanLocalLlms]);
 
   const handleChangeLlm = (next: LlmConfig) => {
     setLlm(next);
@@ -146,6 +200,72 @@ export default function App() {
       localStorage.setItem(STORAGE_E2B_KEY, key);
     } catch {
       // ignore
+    }
+  };
+
+  const handleChangeOpenClawConfig = (cfg: OpenClawConfig) => {
+    setOpenClawConfig(cfg);
+    try {
+      localStorage.setItem(STORAGE_OPENCLAW_KEY, JSON.stringify(cfg));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleProbeOpenClaw = async () => {
+    const res = await probeOpenClawGateway(openClawConfig.wsUrl);
+    setOpenClawProbe(res);
+  };
+
+  const handleConnectOpenClaw = async () => {
+    setOpenClawState({ status: 'connecting', protocol: null, serverNote: null });
+    const next = await openClawClientRef.current.connect(openClawConfig);
+    setOpenClawState(next);
+  };
+
+  const handleDisconnectOpenClaw = () => {
+    openClawClientRef.current.disconnect();
+    setOpenClawState(openClawClientRef.current.getState());
+  };
+
+  const handleAddMcpServer = async (cfg: McpServerConfig) => {
+    setMcpError(null);
+    const next = [...mcpServers, cfg];
+    const saved = await saveMcpServers(next);
+    setMcpServers(saved);
+    setMcpStatuses(await mcpListStatuses());
+  };
+
+  const handleRemoveMcpServer = async (id: string) => {
+    setMcpError(null);
+    await mcpDisconnectServer(id);
+    const next = mcpServers.filter((s) => s.id !== id);
+    const saved = await saveMcpServers(next);
+    setMcpServers(saved);
+    setMcpStatuses(await mcpListStatuses());
+  };
+
+  const handleConnectMcpServer = async (cfg: McpServerConfig) => {
+    setMcpBusyId(cfg.id);
+    setMcpError(null);
+    try {
+      await mcpConnectServer(cfg);
+      setMcpStatuses(await mcpListStatuses());
+    } catch (err) {
+      setMcpError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setMcpBusyId(null);
+    }
+  };
+
+  const handleDisconnectMcpServer = async (id: string) => {
+    setMcpBusyId(id);
+    setMcpError(null);
+    try {
+      await mcpDisconnectServer(id);
+      setMcpStatuses(await mcpListStatuses());
+    } finally {
+      setMcpBusyId(null);
     }
   };
 
@@ -179,30 +299,40 @@ export default function App() {
     });
   };
 
+  const requestUserApproval = (pending: PendingApprovalView) =>
+    new Promise<boolean>((resolve) => {
+      approvalResolverRef.current = resolve;
+      setPendingApproval(pending);
+    });
+
   const handleSendPrompt = async (prompt: string) => {
     const controller = new AbortController();
     abortRef.current = controller;
     setRunning(true);
 
     try {
-      const nextHistory = await runAgentTurn({
-        prompt,
-        history,
-        llm,
-        mode: policy.executionMode,
-        bridge: tauriHostBridge,
-        vm: vmControllerRef.current,
-        signal: controller.signal,
-        onEvent: (evt) => {
-          setEvents((prev) => [...prev, evt]);
-        },
-        onApprovalRequired: (pending) =>
-          new Promise<boolean>((resolve) => {
-            approvalResolverRef.current = resolve;
-            setPendingApproval(pending);
-          }),
-      });
-      setHistory(nextHistory);
+      if (runtime === 'openclaw') {
+        await openClawClientRef.current.runPrompt({
+          prompt,
+          config: openClawConfig,
+          onEvent: (evt) => setEvents((prev) => [...prev, evt]),
+          onApprovalRequired: requestUserApproval,
+        });
+        setOpenClawState(openClawClientRef.current.getState());
+      } else {
+        const nextHistory = await runAgentTurn({
+          prompt,
+          history,
+          llm,
+          mode: policy.executionMode,
+          bridge: tauriHostBridge,
+          vm: vmControllerRef.current,
+          signal: controller.signal,
+          onEvent: (evt) => setEvents((prev) => [...prev, evt]),
+          onApprovalRequired: requestUserApproval,
+        });
+        setHistory(nextHistory);
+      }
     } catch (err) {
       setEvents((prev) => [
         ...prev,
@@ -213,6 +343,9 @@ export default function App() {
           title: err instanceof Error ? err.message : String(err),
         },
       ]);
+      if (runtime === 'openclaw') {
+        setOpenClawState(openClawClientRef.current.getState());
+      }
     } finally {
       setPendingApproval(null);
       approvalResolverRef.current = null;
@@ -261,6 +394,8 @@ export default function App() {
         onSelectTab={setActiveTab}
         mode={policy.executionMode}
         onChangeMode={handleChangeMode}
+        runtime={runtime}
+        mcpToolCount={mcpToolCount}
         llm={llm}
         allowedFolderCount={policy.allowedDirs.length}
         vmRunning={vmState.status === 'running'}
@@ -273,6 +408,10 @@ export default function App() {
         {activeTab === 'mission' && (
           <MissionControl
             mode={policy.executionMode}
+            runtime={runtime}
+            onChangeRuntime={setRuntime}
+            mcpToolCount={mcpToolCount}
+            openClawConnected={openClawState.status === 'connected'}
             events={events}
             running={running}
             pendingApproval={pendingApproval}
@@ -305,6 +444,23 @@ export default function App() {
             onChangeLlm={handleChangeLlm}
             e2bApiKey={e2bApiKey}
             onChangeE2bApiKey={handleChangeE2bKey}
+            runtime={runtime}
+            onChangeRuntime={setRuntime}
+            openClawConfig={openClawConfig}
+            onChangeOpenClawConfig={handleChangeOpenClawConfig}
+            openClawState={openClawState}
+            openClawProbe={openClawProbe}
+            onProbeOpenClaw={handleProbeOpenClaw}
+            onConnectOpenClaw={handleConnectOpenClaw}
+            onDisconnectOpenClaw={handleDisconnectOpenClaw}
+            mcpServers={mcpServers}
+            mcpStatuses={mcpStatuses}
+            mcpBusyId={mcpBusyId}
+            mcpError={mcpError}
+            onAddMcpServer={handleAddMcpServer}
+            onRemoveMcpServer={handleRemoveMcpServer}
+            onConnectMcpServer={handleConnectMcpServer}
+            onDisconnectMcpServer={handleDisconnectMcpServer}
             onDone={() => setActiveTab('mission')}
             t={t.setup}
           />

@@ -6,11 +6,68 @@ export type ToolCategory =
   | 'fs_delete'
   | 'shell_exec'
   | 'web_fetch'
-  | 'vm_control';
+  | 'vm_control'
+  | 'mcp_tool';
 
 export type ExecutionMode = 'local' | 'isolated_vm';
 
+export type AgentRuntime = 'builtin' | 'openclaw';
+
 export type RiskLevel = 'low' | 'medium' | 'high';
+
+export type McpTransport = 'stdio' | 'http';
+
+export interface McpServerConfig {
+  id: string;
+  name: string;
+  transport: McpTransport;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  headers?: Record<string, string>;
+  enabled: boolean;
+}
+
+export interface McpToolInfo {
+  serverId: string;
+  serverName: string;
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface McpServerStatus {
+  id: string;
+  name: string;
+  transport: McpTransport;
+  connected: boolean;
+  serverInfo: string | null;
+  tools: McpToolInfo[];
+  error: string | null;
+}
+
+export interface OpenClawConfig {
+  wsUrl: string;
+  token: string;
+  sessionKey: string;
+  requireSendApproval: boolean;
+}
+
+export interface OpenClawProbeResult {
+  wsUrl: string;
+  httpUrl: string;
+  reachable: boolean;
+  latencyMs: number | null;
+  detail: string;
+}
+
+export interface OpenClawConnectionState {
+  status: 'disconnected' | 'connecting' | 'connected' | 'error';
+  protocol: number | null;
+  serverNote: string | null;
+  error?: string;
+}
 
 export interface SecurityPolicy {
   allowedDirs: string[];
@@ -149,5 +206,12 @@ export interface HostBridge {
     args: Record<string, unknown>,
     approvalToken?: string,
   ): Promise<ToolExecResult>;
+  listMcpTools?: () => Promise<McpToolInfo[]>;
+  callMcpTool?: (
+    serverId: string,
+    toolName: string,
+    args: Record<string, unknown>,
+    approvalToken?: string,
+  ) => Promise<ToolExecResult>;
   proxyHttp?: HttpProxyFn;
 }

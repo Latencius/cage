@@ -23,6 +23,7 @@ test('runAgentTurn enforces human approval gate and stops when denied', async ()
       shell_exec: 'require_approval',
       web_fetch: 'auto_allow',
       vm_control: 'require_approval',
+      mcp_tool: 'require_approval',
     },
   };
 
@@ -78,6 +79,7 @@ test('runAgentTurn passes one-time approval token when approved', async () => {
       shell_exec: 'require_approval',
       web_fetch: 'auto_allow',
       vm_control: 'require_approval',
+      mcp_tool: 'require_approval',
     },
   };
 

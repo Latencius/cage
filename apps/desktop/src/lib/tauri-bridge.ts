@@ -6,6 +6,10 @@ import type {
   AuditEntry,
   HostBridge,
   LocalLlmEndpoint,
+  McpServerConfig,
+  McpServerStatus,
+  McpToolInfo,
+  OpenClawProbeResult,
   SecurityPolicy,
   ToolCategory,
   ToolExecResult,
@@ -25,6 +29,7 @@ const DEFAULT_POLICY: SecurityPolicy = {
     shell_exec: 'require_approval',
     web_fetch: 'auto_allow',
     vm_control: 'require_approval',
+    mcp_tool: 'require_approval',
   },
 };
 
@@ -34,10 +39,19 @@ let browserPolicy: SecurityPolicy = {
   allowedDirs: ['/Users/demo/CageWorkspace'],
 };
 let browserAudit: AuditEntry[] = [];
+let browserMcpConfigs: McpServerConfig[] = [];
+let browserMcpConnected = new Map<string, McpServerStatus>();
 
 export async function getSecurityPolicy(): Promise<SecurityPolicy> {
   if (isTauriRuntime()) {
-    return invoke<SecurityPolicy>('get_security_policy');
+    const p = await invoke<SecurityPolicy>('get_security_policy');
+    return {
+      ...p,
+      permissions: {
+        ...DEFAULT_POLICY.permissions,
+        ...p.permissions,
+      },
+    };
   }
   return structuredClone(browserPolicy);
 }
@@ -89,16 +103,106 @@ export async function scanLocalLlms(): Promise<LocalLlmEndpoint[]> {
   ];
 }
 
+export async function probeOpenClawGateway(wsUrl: string): Promise<OpenClawProbeResult> {
+  if (isTauriRuntime()) {
+    return invoke<OpenClawProbeResult>('probe_openclaw_gateway', { wsUrl });
+  }
+  const httpUrl = wsUrl.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
+  return {
+    wsUrl,
+    httpUrl,
+    reachable: false,
+    latencyMs: null,
+    detail: 'Browser preview mode (direct WebSocket connect still supported)',
+  };
+}
+
+export async function getMcpServers(): Promise<McpServerConfig[]> {
+  if (isTauriRuntime()) {
+    return invoke<McpServerConfig[]>('get_mcp_servers');
+  }
+  return structuredClone(browserMcpConfigs);
+}
+
+export async function saveMcpServers(servers: McpServerConfig[]): Promise<McpServerConfig[]> {
+  if (isTauriRuntime()) {
+    return invoke<McpServerConfig[]>('save_mcp_servers', { servers });
+  }
+  browserMcpConfigs = structuredClone(servers);
+  return structuredClone(browserMcpConfigs);
+}
+
+export async function mcpConnectServer(config: McpServerConfig): Promise<McpServerStatus> {
+  if (isTauriRuntime()) {
+    return invoke<McpServerStatus>('mcp_connect_server', { config });
+  }
+  const status: McpServerStatus = {
+    id: config.id,
+    name: config.name,
+    transport: config.transport,
+    connected: true,
+    serverInfo: 'Browser Preview MCP Mock v1.0',
+    tools: [
+      {
+        serverId: config.id,
+        serverName: config.name,
+        name: 'sample_tool',
+        description: 'Sample MCP tool (preview)',
+        inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+      },
+    ],
+    error: null,
+  };
+  browserMcpConnected.set(config.id, status);
+  return status;
+}
+
+export async function mcpDisconnectServer(serverId: string): Promise<void> {
+  if (isTauriRuntime()) {
+    await invoke('mcp_disconnect_server', { serverId });
+    return;
+  }
+  browserMcpConnected.delete(serverId);
+}
+
+export async function mcpListStatuses(): Promise<McpServerStatus[]> {
+  if (isTauriRuntime()) {
+    return invoke<McpServerStatus[]>('mcp_list_statuses');
+  }
+  return browserMcpConfigs.map(
+    (cfg) =>
+      browserMcpConnected.get(cfg.id) ?? {
+        id: cfg.id,
+        name: cfg.name,
+        transport: cfg.transport,
+        connected: false,
+        serverInfo: null,
+        tools: [],
+        error: null,
+      },
+  );
+}
+
+export async function mcpListTools(): Promise<McpToolInfo[]> {
+  if (isTauriRuntime()) {
+    return invoke<McpToolInfo[]>('mcp_list_tools');
+  }
+  return Array.from(browserMcpConnected.values()).flatMap((s) => s.tools);
+}
+
 export async function pickAllowedFolder(): Promise<string | null> {
   if (isTauriRuntime()) {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Cage にアクセスを許可するフォルダを選択',
+      title: 'Select an allowed workspace folder for Cage',
     });
     return typeof selected === 'string' ? selected : null;
   }
-  const entered = window.prompt('許可するフォルダパスを入力 (ブラウザプレビューモード):', '/Users/demo/Workspace');
+  const entered = window.prompt(
+    'Enter allowed folder path (Browser Preview):',
+    '/Users/demo/Workspace',
+  );
   return entered?.trim() || null;
 }
 
@@ -170,6 +274,29 @@ export const tauriHostBridge: HostBridge = {
     return {
       ok: true,
       output: `[Browser Preview] Simulated ${toolName}(${JSON.stringify(args)}) inside ${browserPolicy.allowedDirs[0] ?? '.'}`,
+      truncated: false,
+    };
+  },
+
+  listMcpTools: mcpListTools,
+
+  async callMcpTool(
+    serverId: string,
+    toolName: string,
+    args: Record<string, unknown>,
+    approvalToken?: string,
+  ): Promise<ToolExecResult> {
+    if (isTauriRuntime()) {
+      return invoke<ToolExecResult>('mcp_call_tool', {
+        serverId,
+        toolName,
+        args,
+        approvalToken: approvalToken ?? null,
+      });
+    }
+    return {
+      ok: true,
+      output: `[Browser Preview] Simulated MCP ${serverId}.${toolName}(${JSON.stringify(args)})`,
       truncated: false,
     };
   },

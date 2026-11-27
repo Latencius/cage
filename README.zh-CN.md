@@ -26,6 +26,8 @@
 - **Local 🟢 / Isolated VM 🛡️ 一键混合切换**：
   - 日常任务在本地授权目录中免费高速执行
   - 高风险操作或浏览器自动巡检可一键切换至 **E2B Desktop** 一次性云端 Ubuntu 虚拟机，应用内嵌 noVNC 实时画面，并支持随时点击 **人工接管（Takeover）** 介入操作
+- **MCP (Model Context Protocol) 扩展**：支持 `stdio` 与 `Streamable HTTP` MCP 服务器，所有外部 MCP 工具调用同样经过 Rust 一次性审批令牌保护。
+- **OpenClaw Gateway 连接 (WebSocket v4)**：支持探测 `ws://127.0.0.1:18789`、`connect.challenge` → `hello-ok` 握手、实时事件流与人工审批拦截。
 - **超轻量 Tauri v2 与毛玻璃 UI**：
   - macOS `.dmg` 仅约 4.8 MiB，不占用宝贵的统一内存与显存，为本地模型留出充足空间。
 

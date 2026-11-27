@@ -23,6 +23,7 @@ pub enum ToolCategory {
     ShellExec,
     WebFetch,
     VmControl,
+    McpTool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -49,6 +50,7 @@ impl Default for SecurityPolicy {
         permissions.insert(ToolCategory::ShellExec, PermissionLevel::RequireApproval);
         permissions.insert(ToolCategory::WebFetch, PermissionLevel::AutoAllow);
         permissions.insert(ToolCategory::VmControl, PermissionLevel::RequireApproval);
+        permissions.insert(ToolCategory::McpTool, PermissionLevel::RequireApproval);
 
         Self {
             allowed_dirs: Vec::new(),
