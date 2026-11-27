@@ -25,6 +25,7 @@ import { GlassHeader, type ActiveTab } from './components/GlassHeader';
 import { MissionControl } from './components/MissionControl';
 import { SafetyPanel } from './components/SafetyPanel';
 import { SetupWizard } from './components/SetupWizard';
+import { StarPopupCard } from './components/StarPopupCard';
 import {
   DESKTOP_MESSAGES,
   getInitialLocale,
@@ -50,6 +51,7 @@ import {
 const STORAGE_LLM_KEY = 'cage.llm.config.v1';
 const STORAGE_E2B_KEY = 'cage.e2b.apikey.v1';
 const STORAGE_OPENCLAW_KEY = 'cage.openclaw.config.v1';
+const STORAGE_STAR_DISMISSED = 'cage.desktop.starPrompt.dismissed.v1';
 
 const DEFAULT_LLM: LlmConfig = {
   providerName: 'Offline Demo',
@@ -135,6 +137,25 @@ export default function App() {
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [running, setRunning] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<PendingApprovalView | null>(null);
+  const [starPopupOpen, setStarPopupOpen] = useState(false);
+
+  const dismissStarForever = () => {
+    setStarPopupOpen(false);
+    try {
+      localStorage.setItem(STORAGE_STAR_DISMISSED, '1');
+    } catch {
+      // ignore
+    }
+  };
+
+  const maybePromptStarAfterTask = () => {
+    try {
+      if (localStorage.getItem(STORAGE_STAR_DISMISSED) === '1') return;
+    } catch {
+      // ignore
+    }
+    setStarPopupOpen(true);
+  };
 
   const approvalResolverRef = useRef<((approved: boolean) => void) | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -333,6 +354,7 @@ export default function App() {
         });
         setHistory(nextHistory);
       }
+      maybePromptStarAfterTask();
     } catch (err) {
       setEvents((prev) => [
         ...prev,
@@ -401,6 +423,7 @@ export default function App() {
         vmRunning={vmState.status === 'running'}
         locale={locale}
         onChangeLocale={setLocale}
+        onOpenStarPopup={() => setStarPopupOpen(true)}
         t={t.header}
       />
 
@@ -481,6 +504,14 @@ export default function App() {
           />
         )}
       </main>
+
+      <StarPopupCard
+        open={starPopupOpen}
+        onStarred={dismissStarForever}
+        onLater={() => setStarPopupOpen(false)}
+        onNever={dismissStarForever}
+        t={t.starPrompt}
+      />
     </div>
   );
 }

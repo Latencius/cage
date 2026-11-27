@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Star,
 } from 'lucide-react';
 import { LOCALE_OPTIONS, type DesktopMessages, type Locale } from '../i18n';
 
@@ -25,6 +26,7 @@ interface GlassHeaderProps {
   vmRunning: boolean;
   locale: Locale;
   onChangeLocale: (locale: Locale) => void;
+  onOpenStarPopup: () => void;
   t: DesktopMessages['header'];
 }
 
@@ -40,6 +42,7 @@ export function GlassHeader({
   vmRunning,
   locale,
   onChangeLocale,
+  onOpenStarPopup,
   t,
 }: GlassHeaderProps) {
   return (
@@ -141,6 +144,15 @@ export function GlassHeader({
             {t.rustGuard}
           </div>
         </div>
+
+        {/* Star on GitHub trigger */}
+        <button
+          onClick={onOpenStarPopup}
+          title="Star Cage on GitHub"
+          className="glass-pill flex h-8 w-8 items-center justify-center rounded-xl text-amber-200 transition hover:bg-amber-400/20"
+        >
+          <Star className="h-3.5 w-3.5 fill-amber-300/80 text-amber-200" />
+        </button>
 
         {/* Language Switcher */}
         <div className="glass-pill flex items-center gap-0.5 rounded-xl p-1">

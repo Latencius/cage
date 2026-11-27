@@ -11,9 +11,11 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
+  Star,
   Wifi,
 } from 'lucide-react';
 import { InteractiveDemo } from './components/InteractiveDemo';
+import { StarPopupCard } from './components/StarPopupCard';
 import {
   getInitialLocale,
   LOCALE_OPTIONS,
@@ -42,10 +44,14 @@ function detectRepoSlug(): string {
   return DEFAULT_REPO;
 }
 
+const STAR_DISMISSED_KEY = 'cage.web.starPrompt.dismissed.v1';
+
 export default function App() {
   const [repo] = useState(detectRepoSlug);
   const [locale, setLocale] = useState<Locale>(getInitialLocale);
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
+  const [stars, setStars] = useState<number | null>(null);
+  const [starPopupOpen, setStarPopupOpen] = useState(false);
 
   const t = WEB_MESSAGES[locale];
 
@@ -55,6 +61,15 @@ export default function App() {
   }, [locale, t.pageTitle]);
 
   useEffect(() => {
+    fetch(`https://api.github.com/repos/${repo}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (typeof data?.stargazers_count === 'number') {
+          setStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {});
+
     fetch(`https://api.github.com/repos/${repo}/releases/latest`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -75,6 +90,25 @@ export default function App() {
         // Fallback to Releases page
       });
   }, [repo]);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(STAR_DISMISSED_KEY) === '1') return;
+    } catch {
+      // ignore
+    }
+    const timer = setTimeout(() => setStarPopupOpen(true), 4500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const dismissStarForever = () => {
+    setStarPopupOpen(false);
+    try {
+      localStorage.setItem(STAR_DISMISSED_KEY, '1');
+    } catch {
+      // ignore
+    }
+  };
 
   const repoUrl = `https://github.com/${repo}`;
   const releasesUrl = release?.htmlUrl ?? `${repoUrl}/releases`;
@@ -129,11 +163,18 @@ export default function App() {
               ))}
             </div>
 
+            <button
+              onClick={() => setStarPopupOpen(true)}
+              className="hidden items-center gap-1.5 rounded-xl border border-amber-300/30 bg-amber-400/12 px-3 py-1.5 text-xs font-medium text-amber-100 transition hover:bg-amber-400/22 sm:flex"
+            >
+              <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-200" />
+              Star{stars !== null ? ` · ${stars}` : ''}
+            </button>
             <a
               href={repoUrl}
               target="_blank"
               rel="noreferrer"
-              className="hidden items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/15 sm:flex"
+              className="hidden items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/15 md:flex"
             >
               <Github className="h-3.5 w-3.5" />
               GitHub
@@ -276,6 +317,16 @@ export default function App() {
           <p className="mt-1.5">{t.footerSub}</p>
         </div>
       </footer>
+
+      <StarPopupCard
+        open={starPopupOpen}
+        repoUrl={repoUrl}
+        stars={stars}
+        onStarClick={dismissStarForever}
+        onLater={() => setStarPopupOpen(false)}
+        onNever={dismissStarForever}
+        t={t.starPrompt}
+      />
     </div>
   );
 }

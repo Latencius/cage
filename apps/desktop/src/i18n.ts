@@ -128,6 +128,14 @@ export interface DesktopMessages {
     clearAudit: string;
     noAudit: string;
   };
+  starPrompt: {
+    badge: string;
+    title: string;
+    desc: string;
+    cta: string;
+    later: string;
+    never: string;
+  };
 }
 
 export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
@@ -285,6 +293,14 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
       clearAudit: 'Clear Log',
       noAudit: 'No tool executions recorded yet.',
     },
+    starPrompt: {
+      badge: 'Open Source · MIT',
+      title: 'Enjoying Cage so far?',
+      desc: 'Star Cage on GitHub to follow releases and help other local-AI users find it.',
+      cta: 'Star on GitHub',
+      later: 'Later',
+      never: "Don't ask again",
+    },
   },
   ja: {
     header: {
@@ -439,6 +455,14 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
       clearAudit: 'ログをクリア',
       noAudit: 'まだツール実行の監査履歴はありません。',
     },
+    starPrompt: {
+      badge: 'オープンソース · MIT',
+      title: 'Cage を気に入っていただけましたか？',
+      desc: 'GitHub でスターをつけて応援してもらえると、アップデートや機能追加の励みになります！',
+      cta: 'GitHub でスターをつける',
+      later: 'あとで',
+      never: '今後表示しない',
+    },
   },
   zh: {
     header: {
@@ -585,6 +609,14 @@ export const DESKTOP_MESSAGES: Record<Locale, DesktopMessages> = {
       auditTitle: (count) => `Rust 安全审计日志（共 ${count} 条）`,
       clearAudit: '清空日志',
       noAudit: '暂无工具执行记录。',
+    },
+    starPrompt: {
+      badge: '开源项目 · MIT',
+      title: '喜欢 Cage 吗？',
+      desc: '欢迎在 GitHub 上点亮 Star 支持项目，关注后续版本发布！',
+      cta: '去 GitHub 点 Star',
+      later: '稍后再说',
+      never: '不再提示',
     },
   },
 };

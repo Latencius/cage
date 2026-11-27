@@ -68,6 +68,14 @@ export interface WebMessages {
   vmModeBullets: string[];
   footerTitle: string;
   footerSub: string;
+  starPrompt: {
+    badge: string;
+    title: string;
+    desc: string;
+    cta: string;
+    later: string;
+    never: string;
+  };
   demo: {
     localLabel: string;
     vmLabel: string;
@@ -147,6 +155,14 @@ export const WEB_MESSAGES: Record<Locale, WebMessages> = {
     ],
     footerTitle: 'Cage — Open Source Local-First AI Agent Desktop (MIT License)',
     footerSub: 'Built with Tauri v2 · Rust · React · TypeScript · E2B Desktop',
+    starPrompt: {
+      badge: 'Open Source · MIT',
+      title: 'Like the idea behind Cage?',
+      desc: 'Give us a star on GitHub to follow releases and help other local-AI builders discover it.',
+      cta: 'Star on GitHub',
+      later: 'Later',
+      never: "Don't show again",
+    },
     demo: {
       localLabel: 'Local Mode',
       vmLabel: 'Isolated VM',
@@ -225,6 +241,14 @@ export const WEB_MESSAGES: Record<Locale, WebMessages> = {
     ],
     footerTitle: 'Cage — Open Source Local-First AI Agent Desktop (MIT License)',
     footerSub: 'Built with Tauri v2 · Rust · React · TypeScript · E2B Desktop',
+    starPrompt: {
+      badge: 'オープンソース · MIT',
+      title: 'Cage を気に入っていただけましたか？',
+      desc: 'GitHub でスターをつけて応援してもらえると、アップデート通知や開発の大きな励みになります！',
+      cta: 'GitHub でスターをつける',
+      later: 'あとで',
+      never: '今後表示しない',
+    },
     demo: {
       localLabel: 'Local Mode',
       vmLabel: '隔離VM Mode',
@@ -303,6 +327,14 @@ export const WEB_MESSAGES: Record<Locale, WebMessages> = {
     ],
     footerTitle: 'Cage — Open Source Local-First AI Agent Desktop (MIT License)',
     footerSub: 'Built with Tauri v2 · Rust · React · TypeScript · E2B Desktop',
+    starPrompt: {
+      badge: '开源项目 · MIT',
+      title: '喜欢 Cage 的设计理念吗？',
+      desc: '欢迎在 GitHub 上点亮 Star 支持项目，帮助更多本地 AI 开发者发现它！',
+      cta: '去 GitHub 点 Star',
+      later: '稍后再说',
+      never: '不再提示',
+    },
     demo: {
       localLabel: 'Local Mode',
       vmLabel: '隔离 VM 模式',
