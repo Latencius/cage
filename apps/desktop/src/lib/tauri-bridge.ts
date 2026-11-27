@@ -83,24 +83,43 @@ export async function scanLocalLlms(): Promise<LocalLlmEndpoint[]> {
   if (isTauriRuntime()) {
     return invoke<LocalLlmEndpoint[]>('scan_local_llms');
   }
-  return [
-    {
-      id: 'ollama',
-      name: 'Ollama',
-      baseUrl: 'http://127.0.0.1:11434/v1',
-      online: false,
-      models: [],
-      latencyMs: null,
-    },
-    {
-      id: 'lmstudio',
-      name: 'LM Studio',
-      baseUrl: 'http://127.0.0.1:1234/v1',
-      online: false,
-      models: [],
-      latencyMs: null,
-    },
-  ];
+  const probeBrowser = async (
+    id: string,
+    name: string,
+    baseUrl: string,
+    modelsUrl: string,
+    isOllama: boolean,
+  ): Promise<LocalLlmEndpoint> => {
+    const start = performance.now();
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 1200);
+      const res = await fetch(modelsUrl, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!res.ok) throw new Error('offline');
+      const json = (await res.json()) as {
+        models?: Array<{ name?: string }>;
+        data?: Array<{ id?: string }>;
+      };
+      const models = isOllama
+        ? (json.models ?? []).map((m) => m.name).filter((x): x is string => Boolean(x))
+        : (json.data ?? []).map((m) => m.id).filter((x): x is string => Boolean(x));
+      return {
+        id,
+        name,
+        baseUrl,
+        online: true,
+        models,
+        latencyMs: Math.round(performance.now() - start),
+      };
+    } catch {
+      return { id, name, baseUrl, online: false, models: [], latencyMs: null };
+    }
+  };
+  return Promise.all([
+    probeBrowser('ollama', 'Ollama', 'http://127.0.0.1:11434/v1', 'http://127.0.0.1:11434/api/tags', true),
+    probeBrowser('lmstudio', 'LM Studio', 'http://127.0.0.1:1234/v1', 'http://127.0.0.1:1234/v1/models', false),
+  ]);
 }
 
 export async function probeOpenClawGateway(wsUrl: string): Promise<OpenClawProbeResult> {
@@ -108,13 +127,25 @@ export async function probeOpenClawGateway(wsUrl: string): Promise<OpenClawProbe
     return invoke<OpenClawProbeResult>('probe_openclaw_gateway', { wsUrl });
   }
   const httpUrl = wsUrl.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
-  return {
-    wsUrl,
-    httpUrl,
-    reachable: false,
-    latencyMs: null,
-    detail: 'Browser preview mode (direct WebSocket connect still supported)',
-  };
+  const start = performance.now();
+  try {
+    const res = await fetch(httpUrl);
+    return {
+      wsUrl,
+      httpUrl,
+      reachable: res.ok,
+      latencyMs: Math.round(performance.now() - start),
+      detail: `Gateway HTTP responded (${res.status})`,
+    };
+  } catch (err) {
+    return {
+      wsUrl,
+      httpUrl,
+      reachable: false,
+      latencyMs: null,
+      detail: err instanceof Error ? err.message : 'Unreachable',
+    };
+  }
 }
 
 export async function getMcpServers(): Promise<McpServerConfig[]> {
