@@ -19,6 +19,12 @@ import { MissionControl } from './components/MissionControl';
 import { SafetyPanel } from './components/SafetyPanel';
 import { SetupWizard } from './components/SetupWizard';
 import {
+  DESKTOP_MESSAGES,
+  getInitialLocale,
+  persistLocale,
+  type Locale,
+} from './i18n';
+import {
   clearAuditLog,
   getAuditLog,
   getSecurityPolicy,
@@ -53,11 +59,18 @@ const DEFAULT_POLICY: SecurityPolicy = {
 };
 
 export default function App() {
+  const [locale, setLocale] = useState<Locale>(getInitialLocale);
   const [activeTab, setActiveTab] = useState<ActiveTab>('mission');
   const [policy, setPolicy] = useState<SecurityPolicy>(DEFAULT_POLICY);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [endpoints, setEndpoints] = useState<LocalLlmEndpoint[]>([]);
   const [scanning, setScanning] = useState(false);
+
+  const t = DESKTOP_MESSAGES[locale];
+
+  useEffect(() => {
+    persistLocale(locale);
+  }, [locale]);
 
   const [llm, setLlm] = useState<LlmConfig>(() => {
     try {
@@ -96,7 +109,6 @@ export default function App() {
     try {
       const found = await scanLocalLlms();
       setEndpoints(found);
-      // Auto-select first online local LLM if user is still on initial demo mode
       const online = found.find((ep) => ep.online);
       if (online && llm.demoMode) {
         const next: LlmConfig = {
@@ -124,7 +136,7 @@ export default function App() {
     try {
       localStorage.setItem(STORAGE_LLM_KEY, JSON.stringify(next));
     } catch {
-      // ignore storage errors
+      // ignore
     }
   };
 
@@ -252,6 +264,9 @@ export default function App() {
         llm={llm}
         allowedFolderCount={policy.allowedDirs.length}
         vmRunning={vmState.status === 'running'}
+        locale={locale}
+        onChangeLocale={setLocale}
+        t={t.header}
       />
 
       <main className="min-h-0 flex-1 overflow-hidden">
@@ -277,6 +292,7 @@ export default function App() {
             onToggleTakeover={handleToggleTakeover}
             onOpenSetup={() => setActiveTab('setup')}
             onOpenSafety={() => setActiveTab('safety')}
+            t={t}
           />
         )}
 
@@ -290,6 +306,7 @@ export default function App() {
             e2bApiKey={e2bApiKey}
             onChangeE2bApiKey={handleChangeE2bKey}
             onDone={() => setActiveTab('mission')}
+            t={t.setup}
           />
         )}
 
@@ -304,6 +321,7 @@ export default function App() {
               await clearAuditLog();
               setAuditLog([]);
             }}
+            t={t.safety}
           />
         )}
       </main>

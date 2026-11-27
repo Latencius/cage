@@ -1,73 +1,86 @@
+<div align="center">
+
 # Cage
 
-**透明なガラスの檻で、ローカルAIエージェントを安全に。**
+**A transparent glass cage for running autonomous local AI agents safely.**
 
-Cage は、ローカルLLM（Ollama / LM Studio / OpenAI互換）とのワンクリック接続、**Rust 物理安全境界（承認ゲート＆許可フォルダ制限）**、そして **E2B Desktop による隔離クラウドVM切替** を備えた超軽量 Tauri v2 デスクトップAIエージェントGUIです。
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-38bdf8?style=flat-square)](https://latencius.github.io/cage/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-34d399?style=flat-square)](./LICENSE)
+[![Built with Tauri v2](https://img.shields.io/badge/Tauri-v2-a78bfa?style=flat-square)](https://v2.tauri.app/)
 
-## 主な特徴
+**English** | [日本語](./README.ja.md) | [简体中文](./README.zh-CN.md)
 
-- **ゼロ設定ローカルLLM自動検知**: 起動時に `localhost:11434` (Ollama) / `localhost:1234` (LM Studio) / `:8080` (llama.cpp) / `:8000` (vLLM) を並列スキャンし、ワンクリックで接続。API課金ゼロ・完全オフラインで動作。
-- **Rust による物理的な安全境界**:
-  - 許可フォルダ外へのパストラバーサル（`..`）やシンボリックリンク脱出を Rust 層で物理ブロック
-  - 危険操作（ファイル書き込み/削除・シェル実行等）は GUI の承認ボタンで発行される**引数バインド型ワンタイム実行トークン**なしでは絶対に実行されない設計
-  - すべてのツール呼び出しを監査ログに記録
-- **Local 🟢 / Isolated VM 🛡️ ハイブリッド切替**:
-  - 日常作業はローカル許可フォルダ内で無料＆高速に実行
-  - 危険な操作やブラウザ自律巡回・Computer Use時はトグル1つで **E2B Desktop** の使い捨てUbuntu VMに切り替え、ライブ映像（noVNC）を見守りながら必要時に「手動操作（Takeover）」で介入可能
-- **Liquid Glass デザイン & 超軽量バイナリ**:
-  - Tauri v2 (Rust + OS標準WebView) により、ローカルLLMのメモリを圧迫せず軽快に常駐
+</div>
 
-## リポジトリ構成
+---
+
+**Cage** is an ultra-lightweight **Tauri v2** desktop GUI for autonomous AI agents designed around three principles:
+
+1. **Zero-Config Local LLM Discovery**: Automatically scans `Ollama (:11434)`, `LM Studio (:1234)`, `llama.cpp (:8080)`, and `vLLM (:8000)` on startup for one-click, zero-cost, offline agent execution (plus any OpenAI-compatible API).
+2. **Rust-Enforced Physical Security Boundary**: Safety isn't just a UI prompt. The Rust core canonicalizes every path to block `..` traversal and symlink escapes, and locks destructive/shell tools behind **argument-bound, single-use human approval tokens**.
+3. **One-Toggle Isolated Cloud VM Mode (E2B Desktop)**: Flip a single switch in the header to route risky browsing or Computer Use tasks into a disposable cloud Ubuntu desktop via [E2B Desktop](https://e2b.dev/), complete with an embedded live noVNC stream and a **Human Takeover** toggle.
+
+---
+
+## Key Features
+
+- **Glassmorphic Mission Control**: Real-time transparent timeline showing thoughts, tool invocations, approval gates, and outputs.
+- **Human-in-the-Loop Approval Firewall**: Per-category permission matrix (`Auto Allow` / `Require Approval` / `Deny`) for file reads, writes, deletes, shell commands, web fetches, and VM control.
+- **Small Local LLM Friendly**: Hybrid tool-call parser supporting both native OpenAI `tool_calls` and fenced JSON fallback for 8B–32B local models.
+- **Offline Demo Sandbox Built-In**: Try the approval gate and timeline workflow right away even before installing Ollama or adding API keys.
+- **Tiny Footprint**: ~4.8 MiB macOS `.dmg` installer and minimal RAM overhead so your unified memory / VRAM stays free for local LLMs.
+
+## Repository Layout
 
 ```text
 .
 ├── apps/
-│   ├── desktop/            # Tauri v2 + React + Tailwind CSS v4 + Rust 安全境界
-│   └── web/                # GitHub Pages 向け紹介LP + インタラクティブデモ
+│   ├── desktop/            # Tauri v2 + React 19 + Tailwind CSS v4 + Rust security boundary
+│   └── web/                # Multilingual Landing Page & Interactive Demo (GitHub Pages)
 ├── packages/
-│   └── agent-core/         # 共有エージェントループ・ハイブリッドツールパーサ・E2B連携
+│   └── agent-core/         # Shared agent loop, hybrid tool parser, E2B Desktop controller
 └── .github/workflows/
-    ├── ci.yml              # 型チェック・TS/Rustユニットテスト・ビルド検証
-    ├── pages.yml           # apps/web の GitHub Pages 自動デプロイ
-    └── release.yml         # v* タグによる macOS (arm64/x64) + Windows 自動ビルド＆リリース
+    ├── ci.yml              # TypeScript typecheck, unit tests, Rust security boundary tests
+    ├── pages.yml           # Automatic GitHub Pages deployment for apps/web
+    └── release.yml         # Automatic macOS (arm64/x64) & Windows builds on v* tags
 ```
 
-## ローカル開発
+## Quick Start (Local Development)
 
-### 前提条件
+### Prerequisites
 - Node.js 22+
-- Rust (`rustup`) — Tauri デスクトップアプリのビルド時のみ必要
+- Rust (`rustup`) — required only when building the Tauri desktop app
 
-### コマンド
+### Commands
 ```bash
 npm install
 
-# ユニットテスト (Agent Core)
+# Run Agent Core unit tests
 npm run test:core
 
-# Rust 安全境界テスト
+# Run Rust security boundary unit tests
 cd apps/desktop/src-tauri && cargo test
 
-# デスクトップアプリ開発起動 (Tauri v2)
+# Start Tauri desktop app in dev mode
 npm run dev:desktop
 
-# デスクトップアプリ本番ビルド (.dmg / .app / .msi)
+# Build desktop production bundle (.dmg / .app / .msi / .exe)
 npm run build:desktop
 
-# 紹介LP開発起動 / ビルド
+# Start or build the multilingual landing page
 npm run dev:web
 npm run build:web
 ```
 
-## リリース手順（自動ビルド＆配布）
+## Releasing
 
-1. `main` にプッシュすると GitHub Actions (`pages.yml`) が自動で **GitHub Pages** に紹介LPをデプロイします。
-2. タグを打ってプッシュすると、`release.yml` が macOS (Apple Silicon / Intel) と Windows インストーラーを並列ビルドして **GitHub Releases** に公開します：
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
+- Pushing to `main` automatically deploys the landing page to **GitHub Pages** (`https://latencius.github.io/cage/`).
+- Pushing a version tag triggers `.github/workflows/release.yml` to build and publish macOS (Apple Silicon & Intel) and Windows installers to **GitHub Releases**:
+  ```bash
+  git tag v0.1.1
+  git push origin v0.1.1
+  ```
 
 ## License
 
-MIT
+[MIT](./LICENSE)

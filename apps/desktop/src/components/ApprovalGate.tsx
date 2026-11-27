@@ -1,13 +1,15 @@
 import type { PendingApprovalView } from '@cage/agent-core';
 import { AlertTriangle, Check, Fingerprint, ShieldAlert, X } from 'lucide-react';
+import type { DesktopMessages } from '../i18n';
 
 interface ApprovalGateProps {
   pending: PendingApprovalView;
   onApprove: () => void;
   onDeny: () => void;
+  t: DesktopMessages['approval'];
 }
 
-export function ApprovalGate({ pending, onApprove, onDeny }: ApprovalGateProps) {
+export function ApprovalGate({ pending, onApprove, onDeny, t }: ApprovalGateProps) {
   const isHigh = pending.risk === 'high';
 
   return (
@@ -25,17 +27,13 @@ export function ApprovalGate({ pending, onApprove, onDeny }: ApprovalGateProps) 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold tracking-wide text-amber-100">
-                HUMAN APPROVAL REQUIRED
-              </span>
+              <span className="text-xs font-bold tracking-wide text-amber-100">{t.title}</span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                  isHigh
-                    ? 'bg-rose-500/30 text-rose-100'
-                    : 'bg-amber-400/30 text-amber-100'
+                  isHigh ? 'bg-rose-500/30 text-rose-100' : 'bg-amber-400/30 text-amber-100'
                 }`}
               >
-                {pending.risk} risk
+                {pending.risk} {t.riskSuffix}
               </span>
             </div>
             <p className="mt-0.5 text-sm font-semibold text-white">{pending.summary}</p>
@@ -53,23 +51,21 @@ export function ApprovalGate({ pending, onApprove, onDeny }: ApprovalGateProps) 
       </pre>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] text-amber-100/75">
-          承認すると Rust 安全境界がこの引数専用のワンタイム実行トークンを発行します。
-        </span>
+        <span className="text-[11px] text-amber-100/75">{t.tokenHint}</span>
         <div className="flex items-center gap-2">
           <button
             onClick={onDeny}
             className="flex items-center gap-1.5 rounded-xl border border-rose-300/35 bg-rose-500/20 px-4 py-2 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/35"
           >
             <X className="h-3.5 w-3.5" />
-            拒否する
+            {t.deny}
           </button>
           <button
             onClick={onApprove}
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-4 py-2 text-xs font-bold text-slate-950 shadow-[0_6px_22px_rgba(52,211,153,0.35)] transition hover:brightness-110"
           >
             <Check className="h-3.5 w-3.5" />
-            今回のみ許可
+            {t.approveOnce}
           </button>
         </div>
       </div>

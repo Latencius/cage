@@ -20,6 +20,7 @@ import {
   User,
   XCircle,
 } from 'lucide-react';
+import type { DesktopMessages } from '../i18n';
 import { ApprovalGate } from './ApprovalGate';
 import { VmViewport } from './VmViewport';
 
@@ -41,19 +42,8 @@ interface MissionControlProps {
   onToggleTakeover: () => void;
   onOpenSetup: () => void;
   onOpenSafety: () => void;
+  t: DesktopMessages;
 }
-
-const LOCAL_PRESETS = [
-  '許可フォルダの中身を一覧表示して',
-  '作業レポートを cage-summary.md に作成して',
-  'シェルでカレントディレクトリを確認して',
-  'temp-draft.txt を削除して（承認テスト）',
-];
-
-const VM_PRESETS = [
-  '隔離VMの画面をスクリーンショットして',
-  '隔離VMで環境情報を確認して',
-];
 
 export function MissionControl({
   mode,
@@ -73,6 +63,7 @@ export function MissionControl({
   onToggleTakeover,
   onOpenSetup,
   onOpenSafety,
+  t,
 }: MissionControlProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -89,7 +80,7 @@ export function MissionControl({
     onSendPrompt(trimmed);
   };
 
-  const presets = mode === 'isolated_vm' ? VM_PRESETS : LOCAL_PRESETS;
+  const presets = mode === 'isolated_vm' ? t.mission.vmPresets : t.mission.localPresets;
 
   return (
     <div
@@ -110,7 +101,7 @@ export function MissionControl({
               <>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-200 ring-1 ring-emerald-300/30">
                   <ShieldCheck className="h-3 w-3" />
-                  Local Safe Mode
+                  {t.mission.localSafeMode}
                 </span>
                 <button
                   onClick={onOpenSafety}
@@ -118,14 +109,14 @@ export function MissionControl({
                 >
                   <FolderLock className="h-3 w-3" />
                   {allowedDirs.length > 0
-                    ? `許可フォルダ: ${allowedDirs[0]}${allowedDirs.length > 1 ? ` (+${allowedDirs.length - 1})` : ''}`
-                    : '許可フォルダ未設定（クリックして指定）'}
+                    ? t.mission.allowedFolder(allowedDirs[0], allowedDirs.length - 1)
+                    : t.mission.noAllowedFolder}
                 </button>
               </>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-400/20 px-2.5 py-0.5 text-[11px] font-medium text-violet-100 ring-1 ring-violet-300/35">
                 <ShieldAlert className="h-3 w-3" />
-                Isolated Cloud VM Mode — ローカルファイル遮断中
+                {t.mission.vmBanner}
               </span>
             )}
           </div>
@@ -136,7 +127,7 @@ export function MissionControl({
               className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-slate-400 transition hover:bg-white/10 hover:text-white"
             >
               <Trash2 className="h-3 w-3" />
-              クリア
+              {t.mission.clear}
             </button>
           )}
         </div>
@@ -148,11 +139,9 @@ export function MissionControl({
               <div className="glass-card mb-4 flex h-16 w-16 items-center justify-center rounded-3xl">
                 <Sparkles className="h-8 w-8 text-cyan-200" />
               </div>
-              <h1 className="text-lg font-semibold text-white">
-                透明なガラスの檻の中で、安全にAIを動かす。
-              </h1>
+              <h1 className="text-lg font-semibold text-white">{t.mission.emptyTitle}</h1>
               <p className="mt-1.5 max-w-md text-xs leading-relaxed text-slate-300/80">
-                すべての思考とツール呼び出しがリアルタイムに可視化され、危険な操作は Rust の承認ゲートで確実に一時停止します。
+                {t.mission.emptyDesc}
               </p>
 
               <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -176,13 +165,14 @@ export function MissionControl({
               pending={pendingApproval}
               onApprove={onApprove}
               onDeny={onDeny}
+              t={t.approval}
             />
           )}
 
           {running && !pendingApproval && (
             <div className="flex items-center gap-2 px-2 text-xs text-cyan-200/80">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              エージェントが安全境界内で処理を実行中...
+              {t.mission.runningText}
             </div>
           )}
         </div>
@@ -194,9 +184,7 @@ export function MissionControl({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={
-                mode === 'isolated_vm'
-                  ? '隔離VMに指示を出す（例: ブラウザで最新ニュースを調べてスクリーンショット）'
-                  : 'エージェントに指示を出す（例: 許可フォルダのファイルを整理して）'
+                mode === 'isolated_vm' ? t.mission.placeholderVm : t.mission.placeholderLocal
               }
               disabled={running}
               className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
@@ -208,7 +196,7 @@ export function MissionControl({
                 className="flex items-center gap-1 rounded-xl bg-rose-500/30 px-3.5 py-2 text-xs font-semibold text-rose-100 ring-1 ring-rose-400/40 transition hover:bg-rose-500/45"
               >
                 <Square className="h-3 w-3 fill-current" />
-                停止
+                {t.mission.stop}
               </button>
             ) : (
               <button
@@ -217,14 +205,14 @@ export function MissionControl({
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 px-4 py-2 text-xs font-bold text-slate-950 shadow-[0_6px_20px_rgba(56,189,248,0.3)] transition hover:brightness-110 disabled:opacity-40"
               >
                 <Send className="h-3.5 w-3.5" />
-                実行
+                {t.mission.run}
               </button>
             )}
           </div>
         </form>
       </div>
 
-      {/* Right Pane: Isolated VM Viewport (visible in isolated_vm mode) */}
+      {/* Right Pane: Isolated VM Viewport */}
       {mode === 'isolated_vm' && (
         <div className="min-h-[340px] lg:col-span-6 lg:min-h-0">
           <VmViewport
@@ -234,6 +222,7 @@ export function MissionControl({
             onStopVm={onStopVm}
             onToggleTakeover={onToggleTakeover}
             onOpenSetup={onOpenSetup}
+            t={t.vm}
           />
         </div>
       )}

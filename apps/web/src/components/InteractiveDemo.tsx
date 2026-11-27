@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -14,12 +14,17 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import type { WebMessages } from '../i18n';
 
 type DemoStep =
   | { id: string; kind: 'log'; text: string; ok?: boolean }
   | { id: string; kind: 'blocked'; text: string };
 
-export function InteractiveDemo() {
+interface InteractiveDemoProps {
+  t: WebMessages['demo'];
+}
+
+export function InteractiveDemo({ t }: InteractiveDemoProps) {
   const [mode, setMode] = useState<'local' | 'vm'>('local');
   const [takeover, setTakeover] = useState(false);
   const [pending, setPending] = useState<{
@@ -28,13 +33,25 @@ export function InteractiveDemo() {
     args: string;
   } | null>({
     tool: 'delete_file',
-    summary: '古い請求書PDFを削除: ~/CageWorkspace/old-draft-2025.pdf',
+    summary: t.initialSummary,
     args: '{\n  "path": "~/CageWorkspace/old-draft-2025.pdf"\n}',
   });
   const [logs, setLogs] = useState<DemoStep[]>([
-    { id: '1', kind: 'log', text: 'Ollama (:11434) 自動検知 → qwen2.5-coder:14b 接続完了 (12ms)', ok: true },
-    { id: '2', kind: 'log', text: 'list_dir(".") → 自動許可（許可フォルダ内）で 8 件取得', ok: true },
+    { id: '1', kind: 'log', text: t.initialLog1, ok: true },
+    { id: '2', kind: 'log', text: t.initialLog2, ok: true },
   ]);
+
+  useEffect(() => {
+    setLogs([
+      { id: '1', kind: 'log', text: t.initialLog1, ok: true },
+      { id: '2', kind: 'log', text: t.initialLog2, ok: true },
+    ]);
+    setPending({
+      tool: 'delete_file',
+      summary: t.initialSummary,
+      args: '{\n  "path": "~/CageWorkspace/old-draft-2025.pdf"\n}',
+    });
+  }, [t]);
 
   const handleApprove = () => {
     if (!pending) return;
@@ -43,7 +60,7 @@ export function InteractiveDemo() {
       {
         id: String(Date.now()),
         kind: 'log',
-        text: `ワンタイムトークン発行 → ${pending.tool} を安全に実行完了`,
+        text: t.approvedLog(pending.tool),
         ok: true,
       },
     ]);
@@ -57,7 +74,7 @@ export function InteractiveDemo() {
       {
         id: String(Date.now()),
         kind: 'blocked',
-        text: `ユーザーが拒否 → ${pending.tool} を中止しエージェントへ通知`,
+        text: t.deniedLog(pending.tool),
       },
     ]);
     setPending(null);
@@ -69,7 +86,7 @@ export function InteractiveDemo() {
       {
         id: String(Date.now()),
         kind: 'blocked',
-        text: 'Rust境界が遮断: read_file("../../etc/passwd") は許可フォルダ外のため物理ブロック',
+        text: t.blockedEscapeLog,
       },
     ]);
   };
@@ -77,7 +94,7 @@ export function InteractiveDemo() {
   const triggerShell = () => {
     setPending({
       tool: 'run_shell',
-      summary: 'シェルコマンド実行: ls -la && du -sh .',
+      summary: t.shellSummary,
       args: '{\n  "command": "ls -la && du -sh .",\n  "cwd": "~/CageWorkspace"\n}',
     });
   };
@@ -109,7 +126,7 @@ export function InteractiveDemo() {
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
-            Local Mode
+            {t.localLabel}
           </button>
           <button
             onClick={() => setMode('vm')}
@@ -120,7 +137,7 @@ export function InteractiveDemo() {
             }`}
           >
             <Monitor className="h-3.5 w-3.5 text-violet-300" />
-            隔離VM Mode
+            {t.vmLabel}
           </button>
         </div>
       </div>
@@ -131,20 +148,20 @@ export function InteractiveDemo() {
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
             <span className="inline-flex items-center gap-1.5">
               <FolderLock className="h-3.5 w-3.5 text-emerald-300" />
-              {mode === 'local' ? '許可フォルダ: ~/CageWorkspace' : 'ローカルファイル完全遮断中'}
+              {mode === 'local' ? t.allowedFolder : t.localBlocked}
             </span>
             <div className="flex gap-1.5">
               <button
                 onClick={triggerShell}
                 className="rounded-lg border border-white/15 bg-white/8 px-2.5 py-1 text-[11px] text-cyan-100 transition hover:bg-white/15"
               >
-                + 承認テスト
+                {t.btnApprovalTest}
               </button>
               <button
                 onClick={triggerTraversal}
                 className="rounded-lg border border-rose-400/30 bg-rose-500/15 px-2.5 py-1 text-[11px] text-rose-100 transition hover:bg-rose-500/25"
               >
-                + 脱出アタック試行
+                {t.btnEscapeTest}
               </button>
             </div>
           </div>
@@ -175,7 +192,7 @@ export function InteractiveDemo() {
             <div className="glass-warning rounded-2xl p-4">
               <div className="flex items-center gap-2 text-xs font-bold text-amber-100">
                 <AlertTriangle className="h-4 w-4 text-amber-300" />
-                HUMAN APPROVAL REQUIRED — 実行一時停止中
+                {t.approvalHeader}
               </div>
               <p className="mt-1 text-sm font-semibold text-white">{pending.summary}</p>
               <pre className="mt-2 rounded-xl bg-slate-950/60 p-2.5 font-mono text-[11px] text-cyan-100">
@@ -186,13 +203,13 @@ export function InteractiveDemo() {
                   onClick={handleDeny}
                   className="flex items-center gap-1 rounded-xl border border-rose-300/35 bg-rose-500/25 px-3.5 py-1.5 text-xs font-semibold text-rose-100 transition hover:bg-rose-500/40"
                 >
-                  <X className="h-3.5 w-3.5" /> 拒否する
+                  <X className="h-3.5 w-3.5" /> {t.denyBtn}
                 </button>
                 <button
                   onClick={handleApprove}
                   className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition hover:brightness-110"
                 >
-                  <Check className="h-3.5 w-3.5" /> 今回のみ許可
+                  <Check className="h-3.5 w-3.5" /> {t.approveBtn}
                 </button>
               </div>
             </div>
@@ -216,11 +233,11 @@ export function InteractiveDemo() {
               >
                 {takeover ? (
                   <>
-                    <Hand className="h-3 w-3" /> 手動操作中
+                    <Hand className="h-3 w-3" /> {t.takeoverActive}
                   </>
                 ) : (
                   <>
-                    <Eye className="h-3 w-3" /> 監視モード
+                    <Eye className="h-3 w-3" /> {t.watchMode}
                   </>
                 )}
               </button>
@@ -231,20 +248,16 @@ export function InteractiveDemo() {
                   <Terminal className="h-3.5 w-3.5" />
                   <span>user@e2b-sandbox:~$ google-chrome --no-sandbox</span>
                 </div>
-                <p className="mt-2 text-slate-300/85">
-                  [Isolated Stream Active] 1280×800 · Encrypted noVNC WebSocket
-                </p>
+                <p className="mt-2 text-slate-300/85">{t.vmStreamActive}</p>
                 <p className="mt-1 text-emerald-300/90">
-                  {takeover
-                    ? '→ 人間のマウス/キーボード入力が有効です（ログイン・CAPTCHA対応可）'
-                    : '→ エージェントが自律操作中。いつでも「手動操作」で横取りできます'}
+                  {takeover ? t.vmTakeoverHint : t.vmWatchHint}
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
                 <span className="inline-flex items-center gap-1">
-                  <Lock className="h-3 w-3 text-violet-300" /> ホストMac/Windowsから完全隔離
+                  <Lock className="h-3 w-3 text-violet-300" /> {t.vmIsolatedHost}
                 </span>
-                <span>セッション終了時にVM破棄</span>
+                <span>{t.vmEphemeral}</span>
               </div>
             </div>
           </div>

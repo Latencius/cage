@@ -11,6 +11,7 @@ import {
   Wifi,
   WifiOff,
 } from 'lucide-react';
+import type { DesktopMessages } from '../i18n';
 
 interface SetupWizardProps {
   endpoints: LocalLlmEndpoint[];
@@ -21,6 +22,7 @@ interface SetupWizardProps {
   e2bApiKey: string;
   onChangeE2bApiKey: (key: string) => void;
   onDone: () => void;
+  t: DesktopMessages['setup'];
 }
 
 export function SetupWizard({
@@ -32,6 +34,7 @@ export function SetupWizard({
   e2bApiKey,
   onChangeE2bApiKey,
   onDone,
+  t,
 }: SetupWizardProps) {
   const [customUrl, setCustomUrl] = useState(llm.baseUrl || 'https://api.openai.com/v1');
   const [customKey, setCustomKey] = useState(llm.apiKey || '');
@@ -49,7 +52,7 @@ export function SetupWizard({
 
   const applyCustom = () => {
     onChangeLlm({
-      providerName: 'OpenAI互換API',
+      providerName: 'OpenAI-Compatible',
       baseUrl: customUrl.trim(),
       apiKey: customKey.trim(),
       model: customModel.trim() || 'gpt-4o-mini',
@@ -64,14 +67,10 @@ export function SetupWizard({
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2.5 py-0.5 text-[11px] font-medium text-cyan-200">
             <Wifi className="h-3 w-3" />
-            ゼロ設定オートディスカバリー
+            {t.badge}
           </span>
-          <h2 className="mt-2 text-lg font-semibold text-white">
-            ローカルLLM・隔離VMの接続ウィザード
-          </h2>
-          <p className="mt-0.5 text-xs text-slate-300/80">
-            起動中の Ollama / LM Studio を自動検知してワンクリック接続。課金ゼロ＆完全オフラインで動かせます。
-          </p>
+          <h2 className="mt-2 text-lg font-semibold text-white">{t.title}</h2>
+          <p className="mt-0.5 text-xs text-slate-300/80">{t.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -80,23 +79,23 @@ export function SetupWizard({
             className="glass-pill flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-medium text-cyan-100 transition hover:bg-white/15 disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${scanning ? 'animate-spin' : ''}`} />
-            {scanning ? 'スキャン中...' : '再スキャン'}
+            {scanning ? t.scanning : t.rescan}
           </button>
           <button
             onClick={onDone}
             className="rounded-xl bg-gradient-to-r from-cyan-400/85 to-sky-500/85 px-4 py-2 text-xs font-semibold text-slate-950 shadow-[0_6px_24px_rgba(56,189,248,0.35)] transition hover:brightness-110"
           >
-            ミッション画面へ →
+            {t.toMission}
           </button>
         </div>
       </div>
 
       {/* Auto-detected Local LLMs */}
       <section className="glass-panel rounded-2xl p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Server className="h-4 w-4 text-cyan-300" />
-            ローカルLLM自動検知（APIキー不要・無料）
+            {t.localSectionTitle}
           </h3>
           <button
             onClick={() =>
@@ -115,7 +114,7 @@ export function SetupWizard({
             }`}
           >
             <Sparkles className="mr-1 inline h-3 w-3" />
-            オフライン・デモモードを使用
+            {t.useDemo}
           </button>
         </div>
 
@@ -158,15 +157,15 @@ export function SetupWizard({
                     >
                       {isSelected ? (
                         <>
-                          <CheckCircle2 className="h-3.5 w-3.5" /> 接続中
+                          <CheckCircle2 className="h-3.5 w-3.5" /> {t.connected}
                         </>
                       ) : (
-                        '接続する'
+                        t.connect
                       )}
                     </button>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-white/5 px-2.5 py-1 text-[11px] text-slate-400">
-                      <WifiOff className="h-3 w-3" /> 未起動
+                      <WifiOff className="h-3 w-3" /> {t.offline}
                     </span>
                   )}
                 </div>
@@ -199,11 +198,9 @@ export function SetupWizard({
         <section className="glass-panel rounded-2xl p-5">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Cpu className="h-4 w-4 text-sky-300" />
-            カスタム OpenAI互換エンドポイント
+            {t.customTitle}
           </h3>
-          <p className="mt-1 text-xs text-slate-300/75">
-            OpenAI / OpenRouter / Gemini OpenAI互換 / リモートOllama等に接続できます。
-          </p>
+          <p className="mt-1 text-xs text-slate-300/75">{t.customDesc}</p>
           <div className="mt-4 space-y-3">
             <div>
               <label className="mb-1 block text-[11px] text-slate-300">Base URL</label>
@@ -224,7 +221,7 @@ export function SetupWizard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-slate-300">API Key（ローカルなら空欄可）</label>
+              <label className="mb-1 block text-[11px] text-slate-300">{t.apiKeyLabel}</label>
               <input
                 type="password"
                 value={customKey}
@@ -237,7 +234,7 @@ export function SetupWizard({
               onClick={applyCustom}
               className="w-full rounded-xl border border-cyan-300/35 bg-cyan-400/20 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/30"
             >
-              このエンドポイントを使用
+              {t.applyCustom}
             </button>
           </div>
         </section>
@@ -245,11 +242,9 @@ export function SetupWizard({
         <section className="glass-panel rounded-2xl p-5">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Cloud className="h-4 w-4 text-violet-300" />
-            隔離VM（E2B Desktop）API設定
+            {t.e2bTitle}
           </h3>
-          <p className="mt-1 text-xs text-slate-300/75">
-            危険なブラウザ巡回やComputer Useを自分のPCから完全隔離したクラウドLinux VMで実行します。
-          </p>
+          <p className="mt-1 text-xs text-slate-300/75">{t.e2bDesc}</p>
           <div className="mt-4 space-y-3">
             <div>
               <label className="mb-1 flex items-center gap-1 text-[11px] text-slate-300">
@@ -265,11 +260,11 @@ export function SetupWizard({
               />
             </div>
             <div className="rounded-xl border border-violet-300/20 bg-violet-400/8 p-3 text-[11px] leading-relaxed text-violet-100/85">
-              <p className="font-semibold text-violet-200">隔離モードの仕組み:</p>
+              <p className="font-semibold text-violet-200">{t.e2bHowTitle}</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-4 text-slate-300">
-                <li>ヘッダーの「隔離VM」トグルをONにするとE2B Desktopへ接続</li>
-                <li>アプリ右ペインに仮想PCのライブ画面（noVNC）を埋め込み</li>
-                <li>必要時は「手動操作（Takeover）」ボタンで人間が横取り操作可能</li>
+                {t.e2bBullets.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
             </div>
           </div>

@@ -227,31 +227,31 @@ export function toOpenAiTools(tools: ToolSpec[]) {
 export function describeToolCall(name: string, args: Record<string, unknown>): string {
   switch (name) {
     case 'list_dir':
-      return `フォルダ一覧を取得: ${String(args.path ?? '.')}`;
+      return `List directory: ${String(args.path ?? '.')}`;
     case 'read_file':
-      return `ファイルを読み取り: ${String(args.path ?? '')}`;
+      return `Read file: ${String(args.path ?? '')}`;
     case 'write_file':
-      return `ファイルへ書き込み: ${String(args.path ?? '')} (${String(args.content ?? '').length} chars)`;
+      return `Write file: ${String(args.path ?? '')} (${String(args.content ?? '').length} chars)`;
     case 'move_file':
-      return `ファイルを移動: ${String(args.from ?? '')} → ${String(args.to ?? '')}`;
+      return `Move file: ${String(args.from ?? '')} → ${String(args.to ?? '')}`;
     case 'delete_file':
-      return `ファイルを削除: ${String(args.path ?? '')}`;
+      return `Delete file: ${String(args.path ?? '')}`;
     case 'run_shell':
-      return `シェルコマンド実行: ${String(args.command ?? '')}`;
+      return `Run shell command: ${String(args.command ?? '')}`;
     case 'fetch_url':
-      return `URLを取得: ${String(args.url ?? '')}`;
+      return `Fetch URL: ${String(args.url ?? '')}`;
     case 'vm_screenshot':
-      return '隔離VMの画面をキャプチャ';
+      return 'Capture isolated VM screenshot';
     case 'vm_launch_app':
-      return `隔離VMでアプリ起動: ${String(args.app ?? '')}`;
+      return `Launch app in isolated VM: ${String(args.app ?? '')}`;
     case 'vm_click':
-      return `隔離VM画面をクリック: (${String(args.x ?? 0)}, ${String(args.y ?? 0)})`;
+      return `Click in isolated VM: (${String(args.x ?? 0)}, ${String(args.y ?? 0)})`;
     case 'vm_type':
-      return `隔離VMへ文字入力: "${String(args.text ?? '').slice(0, 60)}"`;
+      return `Type in isolated VM: "${String(args.text ?? '').slice(0, 60)}"`;
     case 'vm_press_key':
-      return `隔離VMでキー押下: ${String(args.key ?? '')}`;
+      return `Press key in isolated VM: ${String(args.key ?? '')}`;
     case 'vm_bash':
-      return `隔離VM内でBash実行: ${String(args.command ?? '')}`;
+      return `Run Bash in isolated VM: ${String(args.command ?? '')}`;
     default:
       return `${name}(${JSON.stringify(args)})`;
   }

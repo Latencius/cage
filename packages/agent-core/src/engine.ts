@@ -74,7 +74,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
     id: makeId('evt'),
     timestamp: new Date().toISOString(),
     kind: 'user',
-    title: 'ユーザー指示',
+    title: 'User Prompt',
     detail: prompt,
   });
 
@@ -84,7 +84,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
         id: makeId('evt'),
         timestamp: new Date().toISOString(),
         kind: 'error',
-        title: '実行が中断されました',
+        title: 'Execution aborted by operator',
       });
       break;
     }
@@ -96,7 +96,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
         id: makeId('evt'),
         timestamp: new Date().toISOString(),
         kind: 'thought',
-        title: 'エージェントの思考',
+        title: 'Agent Thought',
         detail: response.content.trim(),
       });
     }
@@ -107,7 +107,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
         id: makeId('evt'),
         timestamp: new Date().toISOString(),
         kind: 'assistant',
-        title: '回答',
+        title: 'Assistant',
         detail: response.content,
       });
       return messages;
@@ -164,7 +164,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
           id: makeId('evt'),
           timestamp: new Date().toISOString(),
           kind: 'approval_denied',
-          title: `ポリシーにより遮断: ${toolName}`,
+          title: `Blocked by policy: ${toolName}`,
           detail: msg,
           toolName,
           category: spec.category,
@@ -181,7 +181,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
           id: makeId('evt'),
           timestamp: new Date().toISOString(),
           kind: 'approval_pending',
-          title: `承認待ち: ${summary}`,
+          title: `Awaiting approval: ${summary}`,
           toolName,
           category: spec.category,
           risk: spec.risk,
@@ -205,7 +205,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
             id: makeId('evt'),
             timestamp: new Date().toISOString(),
             kind: 'approval_denied',
-            title: `ユーザーが拒否: ${summary}`,
+            title: `Denied by operator: ${summary}`,
             toolName,
             category: spec.category,
             risk: spec.risk,
@@ -219,7 +219,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
           id: makeId('evt'),
           timestamp: new Date().toISOString(),
           kind: 'approval_granted',
-          title: `承認済み（ワンタイムトークン発行）: ${toolName}`,
+          title: `Approved (one-time token minted): ${toolName}`,
           toolName,
           category: spec.category,
           risk: spec.risk,
@@ -256,7 +256,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<ChatMessage[]
         id: makeId('evt'),
         timestamp: new Date().toISOString(),
         kind: 'tool_result',
-        title: execResult.ok ? `実行完了: ${toolName}` : `実行エラー: ${toolName}`,
+        title: execResult.ok ? `Completed: ${toolName}` : `Failed: ${toolName}`,
         detail: execResult.output,
         toolName,
         category: spec.category,

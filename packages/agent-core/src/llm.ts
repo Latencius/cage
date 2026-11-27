@@ -54,22 +54,23 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
     if (content.includes('DENIED_BY_USER')) {
       return {
         content:
-          '承知しました。承認ゲートで拒否されたため操作を中止しました。別の安全なアプローチが必要でしたら指示してください。',
+          'Understood. The action was aborted at the Approval Gate. Let me know if you would like a safer alternative.',
         toolCalls: [],
       };
     }
     return {
-      content: `操作が完了しました！実行結果を確認してください：\n\n\`\`\`\n${content.slice(0, 600)}\n\`\`\`\n\n（現在はオフライン・デモモードで動作しています。上部の「接続設定」から Ollama / LM Studio や APIキーを繋ぐと実モデルで自律実行できます）`,
+      content: `Done! Here is the tool output:\n\n\`\`\`\n${content.slice(0, 600)}\n\`\`\`\n\n(Currently running in Offline Demo Mode. Open Connections to link Ollama, LM Studio, or any OpenAI-compatible API.)`,
       toolCalls: [],
     };
   }
 
   const userText = lastMsg.content;
+  const lower = userText.toLowerCase();
 
   if (isVmMode) {
-    if (userText.includes('画面') || userText.includes('スクリーン')) {
+    if (lower.includes('screenshot') || userText.includes('画面') || userText.includes('截')) {
       return {
-        content: '隔離VMの現在のデスクトップ画面をキャプチャして確認します。',
+        content: 'Capturing a screenshot of the isolated cloud desktop VM.',
         toolCalls: [
           {
             id: `demo_${Date.now()}`,
@@ -80,7 +81,7 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
       };
     }
     return {
-      content: '隔離VM内で安全にコマンドを実行し、環境を確認します。',
+      content: 'Running an inspection command safely inside the isolated cloud VM.',
       toolCalls: [
         {
           id: `demo_${Date.now()}`,
@@ -94,9 +95,16 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
     };
   }
 
-  if (userText.includes('削除') || userText.includes('消して') || userText.includes('delete')) {
+  if (
+    lower.includes('delete') ||
+    lower.includes('remove') ||
+    userText.includes('削除') ||
+    userText.includes('消して') ||
+    userText.includes('删除')
+  ) {
     return {
-      content: 'ファイル削除は高リスク操作のため、Rust安全境界の承認ゲートを起動します。',
+      content:
+        'File deletion is a high-risk operation — pausing at the Rust Approval Gate for your confirmation.',
       toolCalls: [
         {
           id: `demo_${Date.now()}`,
@@ -110,9 +118,17 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
     };
   }
 
-  if (userText.includes('作成') || userText.includes('書') || userText.includes('レポート') || userText.includes('メモ')) {
+  if (
+    lower.includes('create') ||
+    lower.includes('write') ||
+    lower.includes('report') ||
+    userText.includes('作成') ||
+    userText.includes('レポート') ||
+    userText.includes('创建')
+  ) {
     return {
-      content: '許可フォルダ内にレポートファイルを作成します。書き込み前に承認を確認してください。',
+      content:
+        'Preparing to create a report inside your allowed folder. Please review and approve the write.',
       toolCalls: [
         {
           id: `demo_${Date.now()}`,
@@ -129,9 +145,15 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
     };
   }
 
-  if (userText.includes('シェル') || userText.includes('コマンド') || userText.includes('shell')) {
+  if (
+    lower.includes('shell') ||
+    lower.includes('command') ||
+    userText.includes('シェル') ||
+    userText.includes('コマンド') ||
+    userText.includes('命令')
+  ) {
     return {
-      content: 'ワークスペース内で安全なシェルコマンドを実行します。実行前に承認してください。',
+      content: 'Requesting approval to run a workspace shell command.',
       toolCalls: [
         {
           id: `demo_${Date.now()}`,
@@ -146,7 +168,7 @@ function runDemoCompletion(messages: ChatMessage[], tools: ToolSpec[]): LlmRespo
   }
 
   return {
-    content: 'まず許可フォルダの中身を確認します（読み取りはデフォルトで自動許可されます）。',
+    content: 'Inspecting the allowed workspace folder (directory listing is auto-allowed by default).',
     toolCalls: [
       {
         id: `demo_${Date.now()}`,

@@ -1,5 +1,6 @@
 import type { VmSessionState } from '@cage/agent-core';
 import { Eye, Hand, Loader2, Monitor, Play, PowerOff, ShieldAlert } from 'lucide-react';
+import type { DesktopMessages } from '../i18n';
 
 interface VmViewportProps {
   vmState: VmSessionState;
@@ -8,6 +9,7 @@ interface VmViewportProps {
   onStopVm: () => void;
   onToggleTakeover: () => void;
   onOpenSetup: () => void;
+  t: DesktopMessages['vm'];
 }
 
 export function VmViewport({
@@ -17,6 +19,7 @@ export function VmViewport({
   onStopVm,
   onToggleTakeover,
   onOpenSetup,
+  t,
 }: VmViewportProps) {
   const activeUrl = vmState.takeover ? vmState.interactiveStreamUrl : vmState.streamUrl;
 
@@ -26,7 +29,7 @@ export function VmViewport({
       <div className="flex items-center justify-between border-b border-white/12 px-4 py-3">
         <div className="flex items-center gap-2">
           <Monitor className="h-4 w-4 text-violet-300" />
-          <span className="text-xs font-semibold text-white">隔離クラウドVM (E2B Desktop)</span>
+          <span className="text-xs font-semibold text-white">{t.header}</span>
           {vmState.sandboxId && (
             <span className="rounded-md bg-violet-400/20 px-1.5 py-0.5 font-mono text-[10px] text-violet-200">
               {vmState.sandboxId.slice(0, 12)}
@@ -47,11 +50,11 @@ export function VmViewport({
               >
                 {vmState.takeover ? (
                   <>
-                    <Hand className="h-3 w-3" /> 手動操作中
+                    <Hand className="h-3 w-3" /> {t.takeoverActive}
                   </>
                 ) : (
                   <>
-                    <Eye className="h-3 w-3" /> 監視モード
+                    <Eye className="h-3 w-3" /> {t.watchMode}
                   </>
                 )}
               </button>
@@ -59,7 +62,7 @@ export function VmViewport({
                 onClick={onStopVm}
                 className="flex items-center gap-1 rounded-lg bg-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-200 transition hover:bg-rose-500/35"
               >
-                <PowerOff className="h-3 w-3" /> 終了
+                <PowerOff className="h-3 w-3" /> {t.stop}
               </button>
             </>
           )}
@@ -78,10 +81,8 @@ export function VmViewport({
         ) : vmState.status === 'starting' ? (
           <div className="flex flex-col items-center gap-3 p-6 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-violet-300" />
-            <p className="text-sm font-medium text-white">隔離Ubuntuデスクトップを起動中...</p>
-            <p className="text-xs text-slate-400">
-              あなたのPCから完全に分離されたE2BサンドボックスとnoVNC映像を確立しています
-            </p>
+            <p className="text-sm font-medium text-white">{t.startingTitle}</p>
+            <p className="text-xs text-slate-400">{t.startingDesc}</p>
           </div>
         ) : (
           <div className="flex max-w-sm flex-col items-center gap-4 p-6 text-center">
@@ -89,12 +90,8 @@ export function VmViewport({
               <Monitor className="h-7 w-7 text-violet-200" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">
-                ローカルPCを一切汚さない隔離デスクトップ
-              </h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-300/80">
-                ブラウザ巡回や未知のコマンド検証などリスクのある操作は、ワンクリックでクラウド上の使い捨てVMに逃がして映像を見守れます。
-              </p>
+              <h3 className="text-sm font-semibold text-white">{t.idleTitle}</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-300/80">{t.idleDesc}</p>
             </div>
 
             {vmState.error && (
@@ -110,14 +107,14 @@ export function VmViewport({
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-400 to-cyan-400 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-[0_8px_28px_rgba(139,92,246,0.35)] transition hover:brightness-110"
               >
                 <Play className="h-3.5 w-3.5" />
-                隔離VMを起動する
+                {t.startBtn}
               </button>
             ) : (
               <button
                 onClick={onOpenSetup}
                 className="glass-pill rounded-xl px-4 py-2 text-xs font-semibold text-violet-100 transition hover:bg-white/15"
               >
-                接続設定で E2B_API_KEY を入力する
+                {t.setupKeyBtn}
               </button>
             )}
           </div>

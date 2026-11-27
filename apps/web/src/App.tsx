@@ -5,6 +5,7 @@ import {
   Download,
   FolderLock,
   Github,
+  Globe,
   Lock,
   Monitor,
   Shield,
@@ -13,6 +14,13 @@ import {
   Wifi,
 } from 'lucide-react';
 import { InteractiveDemo } from './components/InteractiveDemo';
+import {
+  getInitialLocale,
+  LOCALE_OPTIONS,
+  persistLocale,
+  WEB_MESSAGES,
+  type Locale,
+} from './i18n';
 
 interface ReleaseInfo {
   tagName: string;
@@ -36,7 +44,15 @@ function detectRepoSlug(): string {
 
 export default function App() {
   const [repo] = useState(detectRepoSlug);
+  const [locale, setLocale] = useState<Locale>(getInitialLocale);
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
+
+  const t = WEB_MESSAGES[locale];
+
+  useEffect(() => {
+    persistLocale(locale);
+    document.title = t.pageTitle;
+  }, [locale, t.pageTitle]);
 
   useEffect(() => {
     fetch(`https://api.github.com/repos/${repo}/releases/latest`)
@@ -44,8 +60,9 @@ export default function App() {
       .then((data) => {
         if (!data?.tag_name) return;
         const assets: Array<{ name: string; browser_download_url: string }> = data.assets ?? [];
-        const macArm = assets.find((a) => a.name.endsWith('.dmg') && a.name.includes('aarch64'))
-          ?? assets.find((a) => a.name.endsWith('.dmg'));
+        const macArm =
+          assets.find((a) => a.name.endsWith('.dmg') && a.name.includes('aarch64')) ??
+          assets.find((a) => a.name.endsWith('.dmg'));
         const win = assets.find((a) => a.name.endsWith('.msi') || a.name.endsWith('.exe'));
         setRelease({
           tagName: data.tag_name,
@@ -66,7 +83,7 @@ export default function App() {
     <div className="lp-bg min-h-screen text-slate-100">
       {/* Glass Topbar */}
       <header className="sticky top-0 z-30 mx-auto max-w-6xl px-4 pt-4">
-        <div className="glass-surface flex items-center justify-between rounded-2xl px-5 py-3">
+        <div className="glass-surface flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-3">
           <a href="#" className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/25 bg-gradient-to-br from-cyan-300/35 to-indigo-500/35">
               <Shield className="h-4 w-4 text-cyan-200" />
@@ -77,24 +94,46 @@ export default function App() {
             </span>
           </a>
 
-          <nav className="hidden items-center gap-6 text-xs text-slate-300 md:flex">
+          <nav className="hidden items-center gap-6 text-xs text-slate-300 lg:flex">
             <a href="#demo" className="transition hover:text-white">
-              インタラクティブ体験
+              {t.navDemo}
             </a>
             <a href="#features" className="transition hover:text-white">
-              安全装置
+              {t.navFeatures}
             </a>
             <a href="#hybrid" className="transition hover:text-white">
-              ローカル × 隔離VM
+              {t.navHybrid}
             </a>
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* Language Switcher */}
+            <div
+              className="flex items-center gap-0.5 rounded-xl border border-white/15 bg-white/8 p-0.5"
+              role="group"
+              aria-label="Language"
+            >
+              <Globe className="ml-1.5 mr-1 h-3 w-3 text-cyan-200/80" />
+              {LOCALE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.code}
+                  onClick={() => setLocale(opt.code)}
+                  className={`rounded-lg px-2 py-1 text-[11px] font-medium transition ${
+                    locale === opt.code
+                      ? 'bg-white/20 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
             <a
               href={repoUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/15"
+              className="hidden items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/15 sm:flex"
             >
               <Github className="h-3.5 w-3.5" />
               GitHub
@@ -106,7 +145,7 @@ export default function App() {
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition hover:brightness-110"
             >
               <Download className="h-3.5 w-3.5" />
-              無料ダウンロード
+              {t.downloadFree}
             </a>
           </div>
         </div>
@@ -116,20 +155,21 @@ export default function App() {
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-20 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3.5 py-1 text-xs font-medium text-cyan-200">
           <Sparkles className="h-3.5 w-3.5" />
-          Tauri v2 · 超軽量デスクトップAIエージェントGUI
+          {t.heroBadge}
         </div>
 
         <h1 className="mx-auto mt-6 max-w-4xl bg-gradient-to-b from-white via-cyan-50 to-slate-300 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-6xl sm:leading-[1.12]">
-          透明なガラスの檻で、
+          {t.heroTitleLine1}
           <br />
-          自律AIエージェントを安全に。
+          {t.heroTitleLine2}
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-slate-300/85 sm:text-base">
-          ターミナルもYAML編集も、API課金の恐怖もいりません。Ollama / LM Studio を自動検知し、
-          <strong className="text-white">Rust 物理安全境界</strong>と
-          <strong className="text-white">ワンクリック隔離クラウドVM</strong>
-          で、初心者でも安心して使えるオープンソースAIデスクトップクライアント。
+          {t.heroDescPrefix}
+          <strong className="text-white">{t.heroDescStrong1}</strong>
+          {t.heroDescMid}
+          <strong className="text-white">{t.heroDescStrong2}</strong>
+          {t.heroDescSuffix}
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -140,7 +180,7 @@ export default function App() {
             className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-sky-400 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-[0_12px_36px_rgba(56,189,248,0.35)] transition hover:brightness-110"
           >
             <Download className="h-4 w-4" />
-            macOS 版をダウンロード (.dmg)
+            {t.downloadMac}
           </a>
           <a
             href={release?.winUrl ?? releasesUrl}
@@ -149,57 +189,53 @@ export default function App() {
             className="glass-tile flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/12"
           >
             <Download className="h-4 w-4 text-cyan-300" />
-            Windows 版 (.msi / .exe)
+            {t.downloadWin}
           </a>
           <a
             href="#demo"
             className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-cyan-200 transition hover:text-white"
           >
-            ブラウザで体験する <ArrowRight className="h-4 w-4" />
+            {t.tryInBrowser} <ArrowRight className="h-4 w-4" />
           </a>
         </div>
 
         {/* Interactive Demo */}
         <div id="demo" className="mx-auto mt-14 max-w-5xl text-left">
           <div className="mb-3 flex items-center justify-between px-1 text-xs text-slate-400">
-            <span>↓ 実際の「承認ゲート」「パストラバーサル遮断」「隔離VM切替」をその場でクリック体験できます</span>
-            <span className="hidden sm:inline">メモリ消費 ~45MB · Rust + React</span>
+            <span>{t.demoHintLeft}</span>
+            <span className="hidden sm:inline">{t.demoHintRight}</span>
           </div>
-          <InteractiveDemo />
+          <InteractiveDemo t={t.demo} />
         </div>
       </section>
 
       {/* Core 4 Features */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-16">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
-            「ガワ替え」ではない、安全装置としてのGUI
-          </h2>
-          <p className="mt-2 text-sm text-slate-300/80">
-            ローカルLLMの弱点を、Rustの強制サンドボックスと視覚的な承認UIで補完します。
-          </p>
+          <h2 className="text-2xl font-bold text-white sm:text-3xl">{t.featuresTitle}</h2>
+          <p className="mt-2 text-sm text-slate-300/80">{t.featuresSubtitle}</p>
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <FeatureCard
             icon={<Wifi className="h-5 w-5 text-cyan-300" />}
-            title="ローカルLLM自動検知（課金ゼロ）"
-            desc="起動時に localhost:11434 (Ollama) や :1234 (LM Studio) を並列スキャン。緑ランプをクリックするだけで接続完了。もちろんOpenAI互換APIも利用可能。"
+            title={t.feat1Title}
+            desc={t.feat1Desc}
           />
           <FeatureCard
             icon={<Lock className="h-5 w-5 text-emerald-300" />}
-            title="Rust物理安全境界 & ワンタイム承認トークン"
-            desc="JS側の制限だけでなく Rust コアでパストラバーサルとシンボリックリンク脱出を物理遮断。危険操作は人間の承認ボタンで発行される1回限りのトークンなしでは実行不可。"
+            title={t.feat2Title}
+            desc={t.feat2Desc}
           />
           <FeatureCard
             icon={<Monitor className="h-5 w-5 text-violet-300" />}
-            title="トグル1つで隔離クラウドVM (E2B Desktop)"
-            desc="ブラウザ自律巡回や危険な検証は、スイッチ1つでクラウド上の隔離Linuxデスクトップへ逃がして実行。ライブ映像を見守りつつ、いつでも人間が横取り操作可能。"
+            title={t.feat3Title}
+            desc={t.feat3Desc}
           />
           <FeatureCard
             icon={<Cpu className="h-5 w-5 text-sky-300" />}
-            title="ローカルLLMのVRAMを奪わない Tauri v2"
-            desc="Electron のように Chromium を抱え込まないため常駐メモリは最小限。ローカルLLMのために大切なユニファイドメモリを温存できます。"
+            title={t.feat4Title}
+            desc={t.feat4Desc}
           />
         </div>
       </section>
@@ -210,26 +246,24 @@ export default function App() {
           <div className="rounded-2xl border border-emerald-300/25 bg-emerald-400/8 p-6">
             <div className="flex items-center gap-2 text-sm font-bold text-emerald-200">
               <ShieldCheck className="h-5 w-5" />
-              Local Mode（日常の作業）
+              {t.localModeTitle}
             </div>
             <ul className="mt-4 space-y-2.5 text-xs leading-relaxed text-slate-200">
-              <li>• Ollama / LM Studio で完全無料・完全オフライン動作</li>
-              <li>• 指定した「許可フォルダ」内だけを安全に読み書き</li>
-              <li>• ファイル削除やシェル実行は承認ゲートで確実に一時停止</li>
-              <li>• すべての実行履歴を Rust 監査ログに自動記録</li>
+              {t.localModeBullets.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
             </ul>
           </div>
 
           <div className="rounded-2xl border border-violet-300/25 bg-violet-400/10 p-6">
             <div className="flex items-center gap-2 text-sm font-bold text-violet-200">
               <FolderLock className="h-5 w-5" />
-              Isolated VM Mode（危険作業・Computer Use）
+              {t.vmModeTitle}
             </div>
             <ul className="mt-4 space-y-2.5 text-xs leading-relaxed text-slate-200">
-              <li>• E2B Desktop で数秒で使い捨てLinuxデスクトップを起動</li>
-              <li>• ホストPCのファイルには一切アクセスできない完全隔離</li>
-              <li>• アプリ右ペインに noVNC ライブ映像を埋め込み表示</li>
-              <li>• 「手動操作（Takeover）」で人間がいつでも直接操作に介入</li>
+              {t.vmModeBullets.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
             </ul>
           </div>
         </div>
@@ -238,12 +272,8 @@ export default function App() {
       {/* Footer */}
       <footer className="mx-auto max-w-6xl px-4 pb-12 pt-8 text-center text-xs text-slate-400">
         <div className="border-t border-white/10 pt-8">
-          <p className="font-medium text-slate-300">
-            Cage — Open Source Local-First AI Agent Desktop (MIT License)
-          </p>
-          <p className="mt-1.5">
-            Built with Tauri v2 · Rust · React · TypeScript · E2B Desktop
-          </p>
+          <p className="font-medium text-slate-300">{t.footerTitle}</p>
+          <p className="mt-1.5">{t.footerSub}</p>
         </div>
       </footer>
     </div>
