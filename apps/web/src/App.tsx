@@ -21,7 +21,7 @@ interface ReleaseInfo {
   winUrl?: string;
 }
 
-const DEFAULT_REPO = 'cage-ai/cage';
+const DEFAULT_REPO = 'Latencius/cage';
 
 function detectRepoSlug(): string {
   if (typeof window === 'undefined') return DEFAULT_REPO;
